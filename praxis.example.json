@@ -1,0 +1,5 @@
+{
+  "provider": "jira",
+  "site": "your-team.atlassian.net",
+  "tracking_dir": ".claude/generated/praxis"
+}
