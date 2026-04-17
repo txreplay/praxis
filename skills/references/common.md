@@ -118,6 +118,26 @@ Created by `/praxis sync`, after **Commentaires**:
 
 Best-effort (skip if MCP unavailable).
 
+## 🛑 Destructive / public actions — always ask first
+
+These actions affect shared state or are user-visible and **must NEVER be executed without explicit, specific authorization from the user**, even in auto mode:
+
+| Action                                         | Required authorization                                  |
+| ---------------------------------------------- | ------------------------------------------------------- |
+| `jira issue comment add` (provider comment)    | Display the FULL drafted comment, wait for "poste"/"ok" |
+| `git push` (any remote)                        | Ask before pushing, even on a feature branch            |
+| `gh pr create` / `gh pr merge` / `gh pr close` | Ask before creating or changing any PR                  |
+| `jira issue move` / transitions to `done`      | Ask before transitioning to Done/Closed                 |
+| Closing / deleting a remote branch             | Ask before any remote deletion                          |
+
+**Drafting ≠ sending.** A user message like "poste un commentaire pour dire X" is a drafting request. You must:
+1. Produce the draft
+2. Display its full content inline in the chat
+3. Ask for explicit validation
+4. Execute ONLY after the user says "ok" / "poste" / "valide" / "envoie"
+
+The `/praxis` workflow and auto mode never override these gates.
+
 ## Avancement entry formats
 
 Base: `- {YYYY-MM-DD} : {description}`

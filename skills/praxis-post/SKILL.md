@@ -30,13 +30,15 @@ Extract: **Avancement** (what was done), **Progression** (remaining/blockers), *
 **In French**, free-form, concise. Include: recent work, remaining items, blockers, PR link.
 No file paths or internal implementation details. No technical metadata.
 
-### 3. Preview — MANDATORY
+### 3. Preview — MANDATORY 🛑
 
-**Always** display the full comment and ask for confirmation before posting.
+**Always** display the FULL comment content inline (not just a path, not a summary) and explicitly ask: "Je poste ? / Validate to send?"
 
-### 4. Post
+⚠️ A user message like "/praxis post" or "poste un commentaire" is a **drafting request**, NOT an authorization to send. You MUST wait for a separate explicit confirmation ("ok", "poste", "valide", "envoie") before running the post command.
 
-Use the provider's **Post a comment** command.
+### 4. Post — only after explicit validation
+
+Only once the user has explicitly validated the drafted content: use the provider's **Post a comment** command. Never skip step 3, even if the user seems to want speed or auto mode is active.
 
 ### 5. Propose transition
 

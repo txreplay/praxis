@@ -50,13 +50,29 @@ Status mapping (Praxis → Jira transition name):
 
 ### Post a comment
 
+> **🛑 MANDATORY — NEVER run `jira issue comment add` without explicit validation.**
+>
+> A user instruction like "poste un commentaire pour dire X" / "add a comment" / "comment on Jira" is a **drafting request**, NOT a send authorization. Jira comments are public and visible to the team and potentially to the client — once sent, they can only be deleted manually.
+>
+> **Required 3-step workflow**:
+> 1. Write the draft to `/tmp/praxis-comment-{KEY}.md`
+> 2. **Display the FULL comment content inline in the chat** (not a summary, not just a path) and explicitly ask: "Je poste ? / Validate to send?"
+> 3. Wait for an explicit "ok" / "poste" / "valide" / "envoie" / "yes, send" before running `jira issue comment add`
+>
+> Auto mode, praxis workflow, or any other running context does NOT override this rule.
+
 Write the comment to a temp file to avoid shell escaping issues:
 
 ```bash
-cat <<'EOF' > /tmp/praxis-comment.md
+cat <<'EOF' > /tmp/praxis-comment-{KEY}.md
 {comment}
 EOF
-jira issue comment add {KEY} --template /tmp/praxis-comment.md
+```
+
+**Then display the full content to the user and ask for validation.** Only after explicit confirmation:
+
+```bash
+jira issue comment add {KEY} --template /tmp/praxis-comment-{KEY}.md --no-input
 ```
 
 ### Create a ticket
