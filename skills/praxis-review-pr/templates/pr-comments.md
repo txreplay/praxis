@@ -143,7 +143,7 @@ gh api "repos/<REPO>/pulls/<N>/comments/<comment_id>/replies" -f body="<texte>"
 
 ## 5. Payload GitHub
 
-```python
+```json
 {
   "commit_id": "<head_sha>",
   "body": "<résumé + section 'Hors-diff / suivi'>",

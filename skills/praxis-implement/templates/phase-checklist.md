@@ -16,21 +16,19 @@
 ## Implementation Order
 
 ### Backend (if applicable)
-1. [ ] Domain layer (entities, value objects, repository interfaces)
-2. [ ] Application layer (use cases, DTOs)
-3. [ ] Infrastructure layer (repository implementations, external services)
-4. [ ] Presentation layer (handlers, middleware)
+1. [ ] Data & domain (models, entities, schemas)
+2. [ ] Data access & integrations (repositories, queries, API clients)
+3. [ ] Business logic (services, use cases, DTOs / validation)
+4. [ ] Entry points (routes, controllers, middleware)
 
 ### Frontend (if applicable)
 1. [ ] Types (interfaces, types)
-2. [ ] API (api calls, react-query hooks)
-3. [ ] Hooks (custom hooks)
+2. [ ] API client (calls, generated types)
+3. [ ] Data hooks (e.g. React Query)
 4. [ ] Components (UI components)
-5. [ ] Pages (page components)
+5. [ ] Pages / routes
 
 ## Post-Implementation
-- [ ] Backend builds: `go build ./...`
-- [ ] Backend lints: `go vet ./...`
-- [ ] Frontend builds: `npm run build`
-- [ ] Database verified (if changed)
+- [ ] Typecheck, lint, test, build pass on the affected projects (praxis `common.md › Verification commands`)
+- [ ] Migration reviewed (if the schema changed)
 - [ ] Spec file updated with completed items

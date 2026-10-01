@@ -16,7 +16,7 @@ mcp__claude_ai_Slack__slack_read_channel(channel_id="{channel}", oldest="{lastSc
 
 Messages come newest first, each with author display name, email and local timestamp. Keep only messages strictly newer than `lastScanTs`. Follow `cursor` when `pagination_info` says more are available.
 
-Scan cursor: the Slack `ts` of the newest message seen. When only a local timestamp is returned, convert it: `date -j -f "%Y-%m-%d %H:%M:%S" "<local>" +%s` → append `.000000`.
+Scan cursor: the Slack `ts` of the newest message seen. When only a local timestamp is returned, convert it: `date -j -f "%Y-%m-%d %H:%M:%S" "<local>" +%s 2>/dev/null || date -d "<local>" +%s` (BSD, then GNU) → append `.000000`.
 
 ## Read a thread
 

@@ -30,7 +30,6 @@ argument-hint: "<pr-number|github-url|chat-url> [more-prs] [scope=frontend|backe
 | `frontend-code-reviewer` | Frontend quality analysis |
 | `backend-code-optimizer` | Backend quality analysis |
 | `explore-docs` | Library/API documentation lookup |
-| `explore-db` | Database schema exploration |
 
 The project guide may route a domain to a project-specific agent; fall back to the generic ones when it is unavailable and say so.
 
@@ -99,7 +98,7 @@ Output leads with the follow-up table. Posting: reply inside existing threads (`
 
 **Filter the noise**: lockfiles, snapshots, build artefacts, generated configs. A PR that commits generated files the repo forbids committing → Important finding.
 
-**Categorize** with the guide's domain routing when present; otherwise backend (`apps/api/**`, `apps/nest*/**`, `libs/back/**`, `*.go`), frontend (`apps/front/**`, `apps/web/**`, `libs/front/**`, `*.tsx`, `*.svelte`), database (`*.prisma`, `migrations/**`), other.
+**Categorize** with the guide's domain routing when present; otherwise backend (`apps/api/**`, `apps/server/**`, `apps/nest*/**`, `libs/back/**`, `server/**`), frontend (`apps/front/**`, `apps/web/**`, `libs/front/**`, `*.tsx`, `*.jsx`, `*.vue`, `*.svelte`), database (`*.prisma`, `migrations/**`), other.
 
 **Calibrate**, after filtering:
 
@@ -127,7 +126,7 @@ All applicable agents in **one message**; skipped in small mode.
 
 - **Frontend**: `explore-codebase` × 2 — correctness (null safety, types, hook deps, edge cases) on the files + diff; existing patterns and conventions to compare against.
 - **Backend**: `explore-codebase` × 2 — correctness (error handling, null safety, architecture); similar existing patterns.
-- **Conditional**: schema changes → `explore-db`; external library → `explore-docs`; behaviour depending on runtime config, env, i18n or a feature flag → `explore-codebase` tracing the **actual runtime value** at every call site (high-yield: most silent bugs are a value differing from what the code assumes at one call site).
+- **Conditional**: schema changes → `explore-codebase` on the schema and migrations; external library → `explore-docs`; behaviour depending on runtime config, env, i18n or a feature flag → `explore-codebase` tracing the **actual runtime value** at every call site (high-yield: most silent bugs are a value differing from what the code assumes at one call site).
 
 Add the guide's stack facts to every prompt (e.g. which frameworks are *not* used, so an agent's defaults do not leak in).
 
@@ -224,19 +223,20 @@ Concise — this is read on GitHub. Concrete code in suggestions. Questions are 
 
 Build the payload with a script in the scratchpad (heredocs break on multi-line markdown):
 
-```python
-import json
-payload = {
-    "commit_id": "<head_sha>",
-    "body": "<résumé + section Hors-diff / suivi>",
-    "event": "<COMMENT|REQUEST_CHANGES|APPROVE>",
-    "comments": [{"path": "<repo-relative>", "line": 24, "side": "RIGHT", "body": "<markdown>"}],
+```js
+// <scratchpad>/build-review.mjs — run with `node <scratchpad>/build-review.mjs`
+import { writeFileSync } from 'node:fs'
+const payload = {
+  commit_id: '<head_sha>',
+  body: '<résumé + section Hors-diff / suivi>',
+  event: '<COMMENT|REQUEST_CHANGES|APPROVE>',
+  comments: [{ path: '<repo-relative>', line: 24, side: 'RIGHT', body: '<markdown>' }],
 }
-json.dump(payload, open("<scratchpad>/praxis-review.json", "w"))
+writeFileSync('<scratchpad>/review.json', JSON.stringify(payload))
 ```
 
 ```bash
-gh api "repos/<REPO>/pulls/<N>/reviews" -X POST --input <scratchpad>/praxis-review.json
+gh api "repos/<REPO>/pulls/<N>/reviews" -X POST --input <scratchpad>/review.json
 ```
 
 Multi-line: `"start_line": <n>, "start_side": "RIGHT"`. `suggestion` blocks only when they replace exactly the commented range, indentation included — and only once run (review-evidence.md).

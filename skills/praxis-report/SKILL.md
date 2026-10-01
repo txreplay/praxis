@@ -29,8 +29,11 @@ Reconstituer la semaine depuis git, GitHub, les tickets et praxis, la mapper sur
 `semaine dernière` → lundi–vendredi précédents ; sinon lundi → aujourd'hui. Calculer avec `date`, jamais deviner :
 
 ```bash
-date -v-mon +%Y-%m-%d                                   # lundi courant (BSD date)
-date -v-mon -v-7d +%Y-%m-%d && date -v-mon -v-3d +%Y-%m-%d   # semaine précédente
+# lundi courant (BSD, puis GNU)
+date -v-mon +%Y-%m-%d 2>/dev/null || date -d "monday this week" +%Y-%m-%d
+# semaine précédente : lundi et vendredi
+date -v-mon -v-7d +%Y-%m-%d 2>/dev/null || date -d "monday last week" +%Y-%m-%d
+date -v-mon -v-3d +%Y-%m-%d 2>/dev/null || date -d "friday last week" +%Y-%m-%d
 ```
 
 ## 2. Exceptions AVANT d'analyser

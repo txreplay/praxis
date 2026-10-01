@@ -49,7 +49,7 @@ Use AskUserQuestion to clarify before exploration:
 
 ### Permissions (if not specified)
 - Who can perform each action?
-- RLS policy rules?
+- Data access rules (row-level / tenant / role restrictions)?
 
 Do not proceed until critical details are clarified.
 
@@ -57,54 +57,7 @@ Do not proceed until critical details are clarified.
 
 ## 2. EXPLORE (PARALLEL)
 
-Launch focused agents in a **single message** (parallel execution). Scale agent count to task complexity.
-
-### Complexity Guide
-
-| Scope | Backend agents | Frontend agents |
-|-------|---------------|-----------------|
-| Single file fix | 1 | 1 |
-| Single-layer feature | 2 | 2 |
-| Multi-layer feature | 2-3 | 2-3 |
-| Cross-cutting / large feature | 3-4 | 3-4 |
-
-### Backend Agents (min 2 when backend in scope, split by concern)
-
-1. **Domain & data flow** - `explore-codebase`: "Find entities, repository interfaces, value objects, and DTOs related to [feature] in backend/internal/domain/ and backend/internal/application/dto/"
-2. **Usecases & business logic** - `explore-codebase`: "Find usecases related to [feature] in backend/internal/application/usecases/. Read their Execute methods, dependencies, and error handling"
-3. **Handlers & routing** - `explore-codebase`: "Find HTTP handlers and routes related to [feature] in backend/internal/presentation/. Check middleware, validation, response patterns"
-4. **Infrastructure & services** - `explore-codebase`: "Find repo implementations, external service adapters, and config related to [feature] in backend/internal/infrastructure/"
-5. **Similar patterns** - `explore-codebase`: "Find the most similar existing feature to [feature] in backend/. I need to replicate its patterns"
-
-### Frontend Agents (min 2 when frontend in scope, split by concern)
-
-1. **Components & UI** - `explore-codebase`: "Find components related to [feature] in frontend/src/components/. Check props, state, Shadcn UI usage"
-2. **Hooks & state** - `explore-codebase`: "Find hooks, React Query calls, and state management related to [feature] in frontend/src/hooks/ and frontend/src/lib/"
-3. **Pages & routing** - `explore-codebase`: "Find pages and layouts related to [feature] in frontend/src/app/. Check route structure, data fetching, i18n"
-4. **Types & API layer** - `explore-codebase`: "Find TypeScript types, API client functions related to [feature] in frontend/src/types/ and frontend/src/lib/"
-5. **Similar patterns** - `explore-codebase`: "Find the most similar existing feature to [feature] in frontend/src/. I need to replicate its patterns"
-
-### Supporting Agents (as needed, 1 each)
-
-| Need | Agent | Prompt |
-|------|-------|--------|
-| Database | explore-db | "dev - Find tables related to [feature], check schema, relationships, RLS policies" |
-| Library docs | explore-docs | "[library] [specific feature] documentation" |
-| Best practices | websearch | "[topic] best practices 2025 2026" |
-
----
-
-## 2.5 POST-EXPLORATION CHECK
-
-After agents return, verify coverage across **all dimensions**:
-
-1. **Full code path traced?** Can I trace handler -> usecase -> repository -> DB (backend) and page -> hook -> API -> component (frontend)? If gaps -> launch targeted `explore-codebase`
-2. **Similar patterns identified?** Do I have a reference implementation to follow? If not -> launch `explore-codebase`
-3. **Data model complete?** Tables, columns, relationships, RLS known? If not -> launch `explore-db`
-4. **Library docs sufficient?** If not -> launch `explore-docs`
-
-Do NOT proceed with incomplete context.
-
+Follow [exploration.md](../references/exploration.md): find where the code lives, launch the backend and frontend agents in one message, add the supporting ones as needed, then run its post-exploration check. Do NOT proceed with incomplete context.
 
 ---
 
@@ -116,18 +69,18 @@ Display architecture plan:
 ## Architecture Plan - [Feature Name]
 
 ### Database
-- Tables to create: [list with columns]
-- Tables to modify: [changes]
-- RLS policies needed
+- Tables / models to create: [list with columns]
+- Tables / models to modify: [changes]
+- Migrations and access rules
 
-### Backend (Go Clean Architecture)
-- Entities: [list]
-- Usecases: [list with descriptions]
-- Handlers: [endpoints]
+### Backend ([the project's architecture, from exploration])
+- Models / entities: [list]
+- Services / use cases: [list with descriptions]
+- Routes / controllers: [endpoints]
 - Code to reuse: [from exploration]
 
-### Frontend (Next.js)
-- Types, Components, Hooks, Pages
+### Frontend ([the project's framework, from exploration])
+- Types, API client, data hooks, components, pages/routes
 - Code to reuse: [from exploration]
 
 ### Libraries / Best Practices
@@ -151,18 +104,18 @@ Structure:
 2. Context and Motivation
 3. Functional Specifications (detailed behavior, rules, edge cases)
 4. Technical Architecture (existing files to modify, new files to create)
-5. Configuration (`app.yaml` for thresholds, limits, feature flags - NO hardcoded values)
-6. Database (migrations, columns, RLS policies)
-7. Backend Implementation (phases: Domain -> Infrastructure -> Application -> Presentation)
-8. Frontend Implementation (phases: Types/API -> Hooks -> Components -> Pages)
+5. Configuration (the project's config mechanism for thresholds, limits, feature flags — NO hardcoded values)
+6. Database (migrations, columns, access rules)
+7. Backend Implementation (phases following the project's layers, data first, entry points last)
+8. Frontend Implementation (phases: Types/API -> Data hooks -> Components -> Pages/routes)
 9. Execution Plan (checkboxes for each task)
 10. Important Notes (compatibility, performance, security)
 
-### Backend Phase Rules
-- Order: Domain -> Infrastructure -> Application -> Presentation
+### Phase Rules
+- Order: data and domain first, entry points and UI last, following the project's layers
 - Max 5 items per phase - split if more
-- Separate CRUD usecases from business logic usecases
-- Each phase must compile independently
+- Separate plain CRUD from business logic
+- Each phase must typecheck and build independently (commands per [common.md — Verification commands](../references/common.md#verification-commands))
 
 ---
 

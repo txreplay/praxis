@@ -41,7 +41,7 @@ Load config per common.md, then `watch.prs` and the overlay's `## praxis-watch-p
 | `unwatch <pr>` | Drop `<pr>` from `myPRs` **and** `mergeWatch`. Confirm in one line, stop. |
 | `chained` | Invoked by `/praxis-watch`: run the pass, skip §7, hand the report back. |
 
-`cat {state}/state.json`. **No file → first run**: `lastScanTs` = today 00:00 local as a Slack-style ts (`date -j -f "%Y-%m-%d %H:%M:%S" "$(date +%Y-%m-%d) 00:00:00" +%s` + `.000000`), empty lists, one line saying the window is today. Schema in Appendix A.
+`cat {state}/state.json`. **No file → first run**: `lastScanTs` = today 00:00 local as a Slack-style ts (`date -j -f "%Y-%m-%d %H:%M:%S" "$(date +%Y-%m-%d) 00:00:00" +%s 2>/dev/null || date -d "$(date +%Y-%m-%d) 00:00:00" +%s` + `.000000` — BSD then GNU `date`), empty lists, one line saying the window is today. Schema in Appendix A.
 
 `ME=$(gh api user -q .login)` once per pass. Check the window first (watch.md) — outside it, one line and stop.
 
@@ -67,7 +67,8 @@ The transcript is the only reliable liveness signal: `~/.claude/projects/<projec
 
 ```bash
 F=$(ls "$SUB"/agent-a<agent-name>-*.jsonl)
-stat -f 'mtime=%Sm size=%z' -t '%H:%M:%S' "$F"; date +%H:%M:%S
+stat -f 'mtime=%Sm size=%z' -t '%H:%M:%S' "$F" 2>/dev/null || stat -c 'mtime=%y size=%s' "$F"   # BSD, then GNU
+date +%H:%M:%S
 tail -1 "$F" | jq -c '{t: .type, kinds: [.message.content[]?.type]}'
 ```
 
@@ -219,7 +220,7 @@ gh pr view <N> --repo {repo} --json author,isDraft,state,title,body,baseRefName,
 
 | Condition | Outcome |
 |---|---|
-| `author.login == $ME` | `ignored` (`own-pr`) **and** `myPRs` with `lastSeenTs` = the message time in ISO (`date -u -r <epoch> '+%Y-%m-%dT%H:%M:%SZ'`) and `source: "slack"` |
+| `author.login == $ME` | `ignored` (`own-pr`) **and** `myPRs` with `lastSeenTs` = the message time in ISO (`date -u -r <epoch> '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date -u -d @<epoch> '+%Y-%m-%dT%H:%M:%SZ'`) and `source: "slack"` |
 | `state ≠ OPEN` | `ignored` (`closed`) |
 | `isDraft` | `parked`, re-checked each pass |
 

@@ -9,9 +9,9 @@
 [Brief description of the feature]
 
 ### Tech Stack
-- **Frontend**: Next.js 16, TypeScript, TailwindCSS, Shadcn UI
-- **Backend**: Go, Fiber, Clean Architecture
-- **Database**: Supabase (PostgreSQL)
+- **Frontend**: [framework, language, UI library — from exploration]
+- **Backend**: [runtime, framework, architecture — from exploration]
+- **Database**: [engine, ORM / migration tool — from exploration]
 
 ---
 
@@ -56,26 +56,19 @@
 ### Existing files to modify
 | File | Changes |
 |------|---------|
-| `path/to/file.go` | [Description] |
+| `path/to/file.ts` | [Description] |
 
 ### New files to create
 | File | Purpose |
 |------|---------|
-| `path/to/new/file.go` | [Purpose] |
+| `path/to/new/file.ts` | [Purpose] |
 
 ---
 
 ## 5. Configuration
 
-### app.yaml additions
-```yaml
-# New configuration for [feature]
-feature_name:
-  enabled: true
-  max_items: 100
-  threshold: 0.8
-  # Add all thresholds, limits, feature flags here
-```
+### Configuration additions
+[Where the project keeps configuration (config module, env schema, feature-flag service). Every threshold, limit and flag for this feature goes there.]
 
 ### Environment variables (.env)
 ```bash
@@ -90,72 +83,57 @@ feature_name:
 ## 6. Database
 
 ### Migrations
+[Schema changes with the project's migration tool (e.g. a Prisma schema change + generated migration). For each new column: nullability, default or backfill, index for new filters, safe for a rolling deploy.]
 
-```sql
--- Migration: [name]
--- Description: [what it does]
-
-CREATE TABLE IF NOT EXISTS [table_name] (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  -- columns
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- RLS policies
-ALTER TABLE [table_name] ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "[policy_name]" ON [table_name]
-  FOR SELECT
-  USING (auth.uid() = user_id);
-```
+### Access rules
+[Who can read/write the new data, and where that is enforced.]
 
 ---
 
 ## 7. Backend Implementation
 
-### Phase 1: Domain
-- [ ] Entity: `internal/domain/entities/[entity].go`
-- [ ] Repository interface: `internal/domain/repositories/[repo].go`
+Phases follow the project's layers — data and domain first, entry points last. Use the real paths found during exploration.
 
-### Phase 2: Infrastructure
-- [ ] Repository impl: `internal/infrastructure/repositories/[repo]_repository.go`
+### Phase 1: Data & domain
+- [ ] Model / entity / schema: `[path]`
 
-### Phase 3: Application
-- [ ] UseCase: `internal/application/usecases/[feature]/[usecase].go`
-- [ ] DTO: `internal/application/dtos/[feature]_dto.go`
+### Phase 2: Data access & integrations
+- [ ] Repository / query / client: `[path]`
 
-### Phase 4: Presentation
-- [ ] Handler: `internal/presentation/handlers/[feature]_handler.go`
-- [ ] Routes: Update `internal/presentation/routes/routes.go`
+### Phase 3: Business logic
+- [ ] Service / use case: `[path]`
+- [ ] DTO / validation schema: `[path]`
+
+### Phase 4: Entry points
+- [ ] Route / controller: `[path]`
 
 ---
 
 ## 8. Frontend Implementation
 
 ### Phase 5: Types & API
-- [ ] Types: `src/types/[feature].ts`
-- [ ] API: `src/lib/api/[feature].ts`
+- [ ] Types: `[path]/[feature].ts`
+- [ ] API client: `[path]/[feature].ts`
 
 ### Phase 6: Hooks
-- [ ] Query hook: `src/hooks/use-[feature].ts`
+- [ ] Query hook: `[path]/use[Feature]Query.ts`
 - [ ] Mutation hooks
 
 ### Phase 7: Components
-- [ ] Component: `src/components/[feature]/[Component].tsx`
+- [ ] Component: `[path]/[Component].tsx`
 
 ### Phase 8: Pages
-- [ ] Page: `src/app/[locale]/(protected)/[route]/page.tsx`
+- [ ] Page / route: `[path]`
 
 ---
 
 ## 9. Execution Plan
 
 ### Backend
-- [ ] Phase 1: Domain layer
-- [ ] Phase 2: Infrastructure layer
-- [ ] Phase 3: Application layer
-- [ ] Phase 4: Presentation layer
+- [ ] Phase 1: Data & domain
+- [ ] Phase 2: Data access & integrations
+- [ ] Phase 3: Business logic
+- [ ] Phase 4: Entry points
 
 ### Frontend
 - [ ] Phase 5: Types & API
@@ -164,9 +142,8 @@ CREATE POLICY "[policy_name]" ON [table_name]
 - [ ] Phase 8: Pages
 
 ### Verification
-- [ ] Backend builds: `go build ./...`
-- [ ] Frontend builds: `npm run build`
-- [ ] Database advisors: `mcp__supabase-dev__get_advisors`
+- [ ] Typecheck, lint, test and build pass on the affected projects (commands per praxis `common.md › Verification commands`)
+- [ ] Migrations reviewed for a rolling deploy
 
 ---
 

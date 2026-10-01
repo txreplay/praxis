@@ -118,20 +118,22 @@ Reviewers repeatedly catch the same block written several times in one PR. §2 l
 **A — detect mechanically**:
 
 ```bash
-git diff <BASE>...HEAD -U0 -- '*.ts' '*.tsx' | python3 -c '
-import sys, collections
-W = 4
-files, cur = {}, None
-for l in sys.stdin:
-    if l.startswith("+++ b/"): cur = l[6:].strip(); files[cur] = []
-    elif l.startswith("+") and not l.startswith("+++") and cur: files[cur].append(l[1:].strip())
-seen = collections.defaultdict(list)
-for f, lines in files.items():
-    lines = [x for x in lines if x and x not in ("}", "})", ")", "},", "]", "],")]
-    for i in range(len(lines) - W + 1):
-        seen["\n".join(lines[i:i+W])].append(f"{f}:{i}")
-for block, where in sorted(seen.items(), key=lambda kv: -len(kv[1])):
-    if len(where) >= 3: print(f"x{len(where)}  {where[0]} …\n    " + block.replace("\n", "\n    ") + "\n")
+git diff <BASE>...HEAD -U0 -- '*.ts' '*.tsx' '*.js' '*.jsx' | node -e '
+const W = 4, files = {}; let cur = null
+for (const l of require("fs").readFileSync(0, "utf8").split("\n")) {
+  if (l.startsWith("+++ b/")) { cur = l.slice(6).trim(); files[cur] = [] }
+  else if (l.startsWith("+") && !l.startsWith("+++") && cur) files[cur].push(l.slice(1).trim())
+}
+const skip = new Set(["}", "})", ")", "},", "]", "],"]), seen = new Map()
+for (const [f, raw] of Object.entries(files)) {
+  const lines = raw.filter((x) => x && !skip.has(x))
+  for (let i = 0; i + W <= lines.length; i++) {
+    const k = lines.slice(i, i + W).join("\n")
+    seen.set(k, [...(seen.get(k) ?? []), `${f}:${i}`])
+  }
+}
+;[...seen].filter(([, w]) => w.length >= 3).sort((a, b) => b[1].length - a[1].length)
+  .forEach(([b, w]) => console.log(`x${w.length}  ${w[0]} …\n    ${b.replaceAll("\n", "\n    ")}\n`))
 ' | head -80
 ```
 

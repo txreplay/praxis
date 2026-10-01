@@ -81,6 +81,16 @@ When a ticket's status, progression, or blockers change:
 2. Locate epic file in `{tracking_dir}/{folder}/`
 3. Update ticket row in **Tickets** table (status, "Reste à faire", "Blocage")
 
+## Verification commands
+
+Never assume a toolchain. Use the first that applies:
+
+1. The project review guide's `## Verify` section (`praxis.json › review.guide`), or the project's `CLAUDE.md`.
+2. **Monorepo task runner** — `nx.json` → `nx affected -t typecheck lint test build --base=origin/main`; `turbo.json` → `turbo run typecheck lint test build --filter=...[origin/main]`.
+3. **package.json scripts** — run the `typecheck`, `lint`, `test`, `build` scripts that exist, with the package manager given by the lockfile: `pnpm-lock.yaml` → `pnpm`, `yarn.lock` → `yarn`, `bun.lockb` / `bun.lock` → `bun`, `package-lock.json` → `npm`.
+
+Scope to what the change touches; never run the whole repo when an affected-only command exists.
+
 ## Starting a ticket — git baseline
 
 **Before creating any worktree or branch** (`/praxis-start`, `/praxis-bug`), always rebase the starting point on an up-to-date `main`. Never branch off whatever happens to be checked out.
