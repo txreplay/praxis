@@ -1,0 +1,9 @@
+{
+  "targets": [
+    "cursor",
+    "codex",
+    "claude",
+    "gemini",
+    "windsurf"
+  ]
+}
