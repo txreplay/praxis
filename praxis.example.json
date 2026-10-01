@@ -1,5 +1,73 @@
 {
   "provider": "jira",
   "site": "your-team.atlassian.net",
-  "tracking_dir": ".claude/generated/praxis"
+  "tracking_dir": ".claude/generated/praxis",
+  "overlay": ".claude/generated/praxis/project.md",
+  "ship": {
+    "qa_targets": [
+      "local",
+      "staging"
+    ],
+    "test_context": "test account / tenant to use for QA",
+    "review_request": {
+      "source": "slack",
+      "channel": "#team-pr-review"
+    }
+  },
+  "watch": {
+    "timezone": "Europe/Paris",
+    "window": {
+      "days": "1-5",
+      "start": "08:30",
+      "end": "18:30"
+    },
+    "state_dir": "~/.claude/state/praxis-watch",
+    "prs": {
+      "source": "slack",
+      "channel": "C0XXXXXXXXX",
+      "channel_name": "team-pr-review",
+      "repo": "acme/app",
+      "frontend_markers": [
+        "front",
+        "frontend"
+      ],
+      "scope_all_globs": [
+        "apps/front/**",
+        "libs/front/**",
+        "*.tsx"
+      ],
+      "scope_contract_globs": [
+        "apps/api/bff/**"
+      ],
+      "budget": 5,
+      "interval_sec": 900
+    },
+    "tickets": {
+      "jql": "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC",
+      "budget": 2,
+      "interval_sec": 1800
+    }
+  },
+  "ticket_pattern": "[A-Z][A-Z0-9]+-\\d+",
+  "review": {
+    "guide": ".claude/generated/praxis/review/guide.md",
+    "checklists": {
+      "backend": ".claude/generated/praxis/review/backend-checklist.md",
+      "frontend": ".claude/generated/praxis/review/frontend-checklist.md"
+    },
+    "report_template": ".claude/generated/praxis/review/review-report.md"
+  },
+  "deploy": {
+    "branch": "staging",
+    "shared_branches": [
+      "staging"
+    ],
+    "workflow": "deploy-staging",
+    "url": "https://staging.example.com/",
+    "propagation": "~2 min, then a hard reload"
+  },
+  "report": {
+    "activities": ".claude/generated/praxis/report/activities.md",
+    "unit": 0.25
+  }
 }

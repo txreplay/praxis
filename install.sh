@@ -39,7 +39,7 @@ echo ""
 
 mkdir -p "$TARGET_DIR"
 
-SKILLS=(praxis-new praxis-start praxis-check praxis-sync praxis-post praxis-done praxis-capture praxis-plan praxis-triage praxis-learn praxis-next praxis-bug praxis-list)
+SKILLS=(praxis-new praxis-start praxis-check praxis-sync praxis-post praxis-done praxis-capture praxis-plan praxis-triage praxis-learn praxis-next praxis-bug praxis-list praxis-ship praxis-watch praxis-watch-prs praxis-watch-tickets praxis-review praxis-review-pr praxis-spec praxis-implement praxis-fix praxis-brainstorm praxis-tdd praxis-commit praxis-qa praxis-deploy praxis-report)
 INSTALLED=0
 
 for skill in "${SKILLS[@]}"; do
@@ -63,6 +63,23 @@ for skill in "${SKILLS[@]}"; do
   ln -s "$src" "$dest"
   echo "  + $skill"
   INSTALLED=$((INSTALLED + 1))
+done
+
+# Agents used by praxis-review / praxis-review-pr
+AGENTS_SRC="$PRAXIS_DIR/agents"
+AGENTS_DIR="$PROJECT_ROOT/.claude/agents"
+mkdir -p "$AGENTS_DIR"
+for src in "$AGENTS_SRC"/*.md; do
+  name="$(basename "$src")"
+  dest="$AGENTS_DIR/$name"
+  if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then
+    echo "  ✓ agent $name (already linked)"
+  elif [ -e "$dest" ]; then
+    echo "  ⚠ agent $name — exists, skipping"
+  else
+    ln -s "$src" "$dest"
+    echo "  + agent $name"
+  fi
 done
 
 echo ""
