@@ -24,6 +24,7 @@ for arg in "$@"; do
       echo "  --help, -h    Show this help"
       exit 0
       ;;
+    -*) echo "Unknown option: $arg (see --help)" >&2; exit 2 ;;
     *) PROJECT_ROOT="$arg" ;;
   esac
 done
@@ -39,51 +40,52 @@ echo ""
 
 mkdir -p "$TARGET_DIR"
 
-SKILLS=(praxis-new praxis-start praxis-check praxis-sync praxis-post praxis-done praxis-capture praxis-plan praxis-triage praxis-learn praxis-next praxis-bug praxis-list praxis-ship praxis-watch praxis-watch-prs praxis-watch-tickets praxis-review praxis-review-pr praxis-spec praxis-implement praxis-fix praxis-brainstorm praxis-tdd praxis-commit praxis-qa praxis-deploy praxis-report)
-INSTALLED=0
-
-for skill in "${SKILLS[@]}"; do
-  src="$SKILLS_DIR/$skill"
-  dest="$TARGET_DIR/$skill"
-
+# Link <src> to <dest>: create, keep when already right, refresh a stale or
+# dangling link, never overwrite a real file. Prints one line, returns 0 when
+# the link was created or refreshed.
+link_into() {
+  local src="$1" dest="$2" label="$3"
   if [ -L "$dest" ]; then
-    current_target="$(readlink "$dest")"
-    if [ "$current_target" = "$src" ]; then
-      echo "  ✓ $skill (already linked)"
-      continue
-    else
-      echo "  ↻ $skill (updating link)"
-      rm "$dest"
+    if [ "$(readlink "$dest")" = "$src" ]; then
+      echo "  ✓ $label (already linked)"
+      return 1
     fi
+    echo "  ↻ $label (updating link)"
+    rm "$dest"
   elif [ -e "$dest" ]; then
-    echo "  ⚠ $skill — exists but is not a symlink, skipping"
-    continue
+    echo "  ⚠ $label — exists but is not a symlink, skipping"
+    return 1
+  else
+    echo "  + $label"
   fi
-
   ln -s "$src" "$dest"
-  echo "  + $skill"
-  INSTALLED=$((INSTALLED + 1))
+}
+
+INSTALLED=0
+TOTAL=0
+for src in "$SKILLS_DIR"/praxis-*/; do
+  [ -f "$src/SKILL.md" ] || continue
+  src="${src%/}"
+  skill="$(basename "$src")"
+  TOTAL=$((TOTAL + 1))
+  if link_into "$src" "$TARGET_DIR/$skill" "$skill"; then
+    INSTALLED=$((INSTALLED + 1))
+  fi
 done
 
 # Agents used by praxis-review / praxis-review-pr
 AGENTS_SRC="$PRAXIS_DIR/agents"
 AGENTS_DIR="$PROJECT_ROOT/.claude/agents"
-mkdir -p "$AGENTS_DIR"
-for src in "$AGENTS_SRC"/*.md; do
-  name="$(basename "$src")"
-  dest="$AGENTS_DIR/$name"
-  if [ -L "$dest" ] && [ "$(readlink "$dest")" = "$src" ]; then
-    echo "  ✓ agent $name (already linked)"
-  elif [ -e "$dest" ]; then
-    echo "  ⚠ agent $name — exists, skipping"
-  else
-    ln -s "$src" "$dest"
-    echo "  + agent $name"
-  fi
-done
+if [ -d "$AGENTS_SRC" ]; then
+  mkdir -p "$AGENTS_DIR"
+  for src in "$AGENTS_SRC"/*.md; do
+    [ -f "$src" ] || continue
+    name="$(basename "$src")"
+    link_into "$src" "$AGENTS_DIR/$name" "agent ${name%.md}" || true
+  done
+fi
 
-echo ""
-echo "Done. $INSTALLED skill(s) installed, ${#SKILLS[@]} total."
+echo "Done. $INSTALLED skill(s) installed or refreshed, $TOTAL total."
 
 # Check for praxis.json
 if [ ! -f "$PROJECT_ROOT/praxis.json" ]; then
