@@ -1,9 +1,9 @@
 ---
 name: praxis-learn
-description: Capture a cross-ticket lesson or surface relevant lessons for the current ticket. Use when the user invokes "/praxis learn" to record a pattern, or "/praxis learn --review" to see lessons relevant to the current work.
+description: Capture a cross-ticket lesson or surface relevant lessons for the current ticket. Use when the user invokes "/praxis-learn" to record a pattern, or "/praxis-learn --review" to see lessons relevant to the current work.
 ---
 
-# /praxis learn [--review]
+# /praxis-learn [--review]
 
 Capture or review cross-ticket lessons.
 

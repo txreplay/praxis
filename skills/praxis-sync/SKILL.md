@@ -1,9 +1,9 @@
 ---
 name: praxis-sync
-description: Update local tracking files from the provider, git diff, code TODOs, and linked resources. Use when the user invokes "/praxis sync" with or without a ticket ID. Analyzes code changes to update progression and advancement.
+description: Update local tracking files from the provider, git diff, code TODOs, and linked resources. Use when the user invokes "/praxis-sync" with or without a ticket ID. Analyzes code changes to update progression and advancement.
 ---
 
-# /praxis sync [TICKET_KEY]
+# /praxis-sync [TICKET_KEY]
 
 Update local tracking with latest provider info, code analysis, and linked resources.
 

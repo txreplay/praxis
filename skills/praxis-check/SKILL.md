@@ -1,9 +1,9 @@
 ---
 name: praxis-check
-description: Verify whether code changes cover the acceptance criteria of the active ticket. Use when the user invokes "/praxis check" with or without a ticket ID. Compares implemented code with acceptance criteria and local progression, generates a coverage report.
+description: Verify whether code changes cover the acceptance criteria of the active ticket. Use when the user invokes "/praxis-check" with or without a ticket ID. Compares implemented code with acceptance criteria and local progression, generates a coverage report.
 ---
 
-# /praxis check [TICKET_KEY]
+# /praxis-check [TICKET_KEY]
 
 Verify acceptance criteria coverage against implemented changes.
 
@@ -54,4 +54,4 @@ Epic: update per [common.md — Updating the epic file](../references/common.md#
 ### 7. Next steps
 
 If gaps → suggest files to modify, tests to add.
-If all covered → suggest `/praxis post` then `/praxis done`.
+If all covered → suggest `/praxis-post` then `/praxis-done`.

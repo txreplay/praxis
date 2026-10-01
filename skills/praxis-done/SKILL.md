@@ -1,9 +1,9 @@
 ---
 name: praxis-done
-description: Close the active ticket with pre-flight verification. Use when the user invokes "/praxis done" with or without a ticket ID. Runs gates (clean tree, AC coverage, build, TODOs), transitions status on the provider, and moves to the next ticket.
+description: Close the active ticket with pre-flight verification. Use when the user invokes "/praxis-done" with or without a ticket ID. Runs gates (clean tree, AC coverage, build, TODOs), transitions status on the provider, and moves to the next ticket.
 ---
 
-# /praxis done [TICKET_KEY] [--status=review|done]
+# /praxis-done [TICKET_KEY] [--status=review|done]
 
 Close work on a ticket after pre-flight verification.
 
@@ -50,11 +50,11 @@ Epic: per [common.md — Updating the epic file](../references/common.md#updatin
 
 ### 5. Propose lesson capture
 
-If ticket has **Décisions** entries → suggest `/praxis learn` to promote to cross-ticket lessons.
+If ticket has **Décisions** entries → suggest `/praxis-learn` to promote to cross-ticket lessons.
 
 ### 6. Move to next ticket
 
-Look in epic for next `todo` or `active` ticket → update `.current`, suggest `/praxis start`.
+Look in epic for next `todo` or `active` ticket → update `.current`, suggest `/praxis-start`.
 If no next ticket → "Tous les tickets de l'epic sont terminés ou en revue."
 If standalone (`epic: null`) → skip.
 

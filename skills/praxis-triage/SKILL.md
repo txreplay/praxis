@@ -1,9 +1,9 @@
 ---
 name: praxis-triage
-description: Assess ticket complexity and suggest the right implementation workflow. Use when the user invokes "/praxis triage" with or without a ticket ID.
+description: Assess ticket complexity and suggest the right implementation workflow. Use when the user invokes "/praxis-triage" with or without a ticket ID.
 ---
 
-# /praxis triage [TICKET_KEY]
+# /praxis-triage [TICKET_KEY]
 
 Assess ticket complexity and suggest the right workflow.
 
@@ -45,9 +45,9 @@ Extract: description, AC, linked resources, current progression.
 
 | Size | Workflow |
 |------|----------|
-| **S** | `/praxis start` → `/fix` → `/praxis check` → `/praxis done` |
-| **M** | `/praxis start` → `/plan` or `/tdd` → `/praxis check` → `/praxis done` |
-| **L** | `/praxis start` → `/brainstorm` → `/plan` → `/implement` → `/praxis check` → `/review` → `/praxis done` |
+| **S** | `/praxis-start` → `/fix` → `/praxis-check` → `/praxis-done` |
+| **M** | `/praxis-start` → `/plan` or `/tdd` → `/praxis-check` → `/praxis-done` |
+| **L** | `/praxis-start` → `/brainstorm` → `/plan` → `/implement` → `/praxis-check` → `/review` → `/praxis-done` |
 
 ### 5. Report
 

@@ -1,9 +1,9 @@
 ---
 name: praxis-capture
-description: Capture an implementation decision or spec correction into the active ticket's tracking file. Use when the user invokes "/praxis capture" to record decisions that deviate from or complement original specs. Optionally posts to the provider.
+description: Capture an implementation decision or spec correction into the active ticket's tracking file. Use when the user invokes "/praxis-capture" to record decisions that deviate from or complement original specs. Optionally posts to the provider.
 ---
 
-# /praxis capture [TICKET_KEY]
+# /praxis-capture [TICKET_KEY]
 
 Capture an implementation decision or spec correction into the ticket file.
 
@@ -48,7 +48,7 @@ If `scope_change` → update epic per [common.md — Updating the epic file](../
 ### 4. Propose posting
 
 Ask: "Poster cette décision en commentaire sur {TICKET_KEY} ?"
-If yes → same flow as `/praxis post` (generate, preview, confirm, post).
+If yes → same flow as `/praxis-post` (generate, preview, confirm, post).
 
 ### 5. Confirm
 

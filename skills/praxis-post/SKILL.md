@@ -1,9 +1,9 @@
 ---
 name: praxis-post
-description: Post a progress comment on the active ticket. Use when the user invokes "/praxis post" with or without a ticket ID. Generates a comment in French from local advancement, previews it, and posts after explicit confirmation.
+description: Post a progress comment on the active ticket. Use when the user invokes "/praxis-post" with or without a ticket ID. Generates a comment in French from local advancement, previews it, and posts after explicit confirmation.
 ---
 
-# /praxis post [TICKET_KEY]
+# /praxis-post [TICKET_KEY]
 
 Generate and post a progress comment from local advancement.
 
@@ -34,7 +34,7 @@ No file paths or internal implementation details. No technical metadata.
 
 **Always** display the FULL comment content inline (not just a path, not a summary) and explicitly ask: "Je poste ? / Validate to send?"
 
-⚠️ A user message like "/praxis post" or "poste un commentaire" is a **drafting request**, NOT an authorization to send. You MUST wait for a separate explicit confirmation ("ok", "poste", "valide", "envoie") before running the post command.
+⚠️ A user message like "/praxis-post" or "poste un commentaire" is a **drafting request**, NOT an authorization to send. You MUST wait for a separate explicit confirmation ("ok", "poste", "valide", "envoie") before running the post command.
 
 ### 4. Post — only after explicit validation
 
@@ -42,4 +42,4 @@ Only once the user has explicitly validated the drafted content: use the provide
 
 ### 5. Propose transition
 
-If status is `active` and a PR exists → suggest `/praxis done`.
+If status is `active` and a PR exists → suggest `/praxis-done`.

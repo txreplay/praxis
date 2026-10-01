@@ -1,9 +1,9 @@
 ---
 name: praxis-next
-description: Analyze current state and suggest the next action. Use when the user invokes "/praxis next" or seems unsure what to do next. Reads .current, ticket progression, git state, and recommends the next step.
+description: Analyze current state and suggest the next action. Use when the user invokes "/praxis-next" or seems unsure what to do next. Reads .current, ticket progression, git state, and recommends the next step.
 ---
 
-# /praxis next
+# /praxis-next
 
 Auto-detect the next action based on current state.
 
@@ -31,16 +31,16 @@ First match wins:
 | Condition | Recommendation |
 |-----------|---------------|
 | No `praxis.json` | "Copier le template: `cp {praxis_dir}/praxis.example.json ./praxis.json`" |
-| No `.current` | "`/praxis new <EPIC>` ou `/praxis bug <TICKET>`" |
-| `.current` but ticket file missing | "`/praxis sync`" |
-| Ticket status `done`/`review` | Find next ticket → `/praxis start {NEXT}` or "Tous terminés" |
-| Ticket status `blocked` | "Ticket bloqué. Résoudre le blocage ou `/praxis start {AUTRE}` pour un autre ticket" |
+| No `.current` | "`/praxis-new <EPIC>` ou `/praxis-bug <TICKET>`" |
+| `.current` but ticket file missing | "`/praxis-sync`" |
+| Ticket status `done`/`review` | Find next ticket → `/praxis-start {NEXT}` or "Tous terminés" |
+| Ticket status `blocked` | "Ticket bloqué. Résoudre le blocage ou `/praxis-start {AUTRE}` pour un autre ticket" |
 | Uncommitted changes | "`/commit`" |
-| All items "À faire" | "`/praxis triage`" |
-| Items "En cours", none "Terminé" | "Continuer l'implémentation ou `/praxis check`" |
-| Partial coverage | "`/praxis check` — {X}/{Y} couverts" |
-| All covered, no PR | "Créer un PR, puis `/praxis post` + `/praxis done`" |
-| All covered, PR exists, still `active` | "`/praxis done`" |
+| All items "À faire" | "`/praxis-triage`" |
+| Items "En cours", none "Terminé" | "Continuer l'implémentation ou `/praxis-check`" |
+| Partial coverage | "`/praxis-check` — {X}/{Y} couverts" |
+| All covered, no PR | "Créer un PR, puis `/praxis-post` + `/praxis-done`" |
+| All covered, PR exists, still `active` | "`/praxis-done`" |
 | Fallback | Show state summary |
 
 ### 3. Display
@@ -53,4 +53,4 @@ First match wins:
 → {recommendation + command}
 ```
 
-If relevant lessons exist → append: `{N} lesson(s) — /praxis learn --review`
+If relevant lessons exist → append: `{N} lesson(s) — /praxis-learn --review`

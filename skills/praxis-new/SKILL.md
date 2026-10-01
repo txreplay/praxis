@@ -1,15 +1,15 @@
 ---
 name: praxis-new
-description: Initialize local tracking for an epic and all its child tickets. Use when the user invokes "/praxis new" followed by an epic ID (e.g., /praxis new HUB-30635). Fetches the epic and its children via the configured provider, creates a folder with one markdown file per ticket + an epic summary file.
+description: Initialize local tracking for an epic and all its child tickets. Use when the user invokes "/praxis-new" followed by an epic ID (e.g., /praxis-new KEY-30635). Fetches the epic and its children via the configured provider, creates a folder with one markdown file per ticket + an epic summary file.
 ---
 
-# /praxis new <EPIC_KEY>
+# /praxis-new <EPIC_KEY>
 
 Create the local tracking structure for an epic.
 
 ## Argument
 
-`EPIC_KEY` required (e.g., `HUB-30635`). Epic identifier in the provider.
+`EPIC_KEY` required (e.g., `KEY-30635`). Epic identifier in the provider.
 
 ## References
 
@@ -27,7 +27,7 @@ Per [common.md — Loading the provider](../references/common.md#loading-the-pro
 
 Look for a `{EPIC_KEY}-*` folder in `{tracking_dir}/`.
 
-- **Found**: suggest `/praxis sync`. Stop.
+- **Found**: suggest `/praxis-sync`. Stop.
 - **Not found**: continue.
 
 ### 2. Fetch the epic
@@ -66,4 +66,4 @@ Use [templates.md](../references/templates.md). Map provider status → Praxis s
 
 ### 7. Summary
 
-Display: folder created, file count, active ticket. Suggest `/praxis start {TICKET_KEY}`.
+Display: folder created, file count, active ticket. Suggest `/praxis-start {TICKET_KEY}`.

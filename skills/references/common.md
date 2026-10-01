@@ -8,6 +8,8 @@ Every skill starts with:
 2. Read `provider` → load `providers/{provider}.md` from this references directory
 3. Read `site` → use for URLs in templates
 4. Read `tracking_dir` (default: `.claude/generated/praxis`)
+5. Read `ticket_pattern` (default: `[A-Z][A-Z0-9]+-\d+`) — the regex for ticket keys in branches, commits and PR titles
+6. Optional sections: `overlay`, `ship`, `watch` (see [watch.md](watch.md)), `review` (`guide`, `checklists`, `report_template` — see `praxis-review`)
 
 If `praxis.json` is missing → ask the user to create one.
 
@@ -31,7 +33,7 @@ Priority order (first that resolves):
 
 1. `TICKET_KEY` argument if provided
 2. `{tracking_dir}/.current` → `ticket` field
-3. Git branch (`git branch --show-current` → extract ticket key pattern)
+3. Git branch (`git branch --show-current` → extract `ticket_pattern`)
 4. Ask the user
 
 ## Paths and conventions
@@ -44,7 +46,7 @@ Priority order (first that resolves):
 
 ## Standalone tickets (epic = null)
 
-When `.current` has `"epic": null` (created via `/praxis bug`):
+When `.current` has `"epic": null` (created via `/praxis-bug`):
 - **No epic file** — skip all epic file operations
 - Folder: `{TICKET_KEY}-{slug}/`
 - Single ticket file in the folder
@@ -79,19 +81,41 @@ When a ticket's status, progression, or blockers change:
 2. Locate epic file in `{tracking_dir}/{folder}/`
 3. Update ticket row in **Tickets** table (status, "Reste à faire", "Blocage")
 
+## Starting a ticket — git baseline
+
+**Before creating any worktree or branch** (`/praxis-start`, `/praxis-bug`), always rebase the starting point on an up-to-date `main`. Never branch off whatever happens to be checked out.
+
+1. `git status --porcelain` → if the working tree is dirty, **stop and ask** the user (commit / stash / abandon). Never discard changes.
+2. `git checkout main`
+3. `git pull origin main`
+
+Only then create the worktree or the branch.
+
+If the session is already inside a worktree (so `main` is checked out elsewhere), do at least `git fetch origin main` and branch from `origin/main`.
+
+## Session rename
+
+Once the git environment is ready, **propose** renaming the session — display the command, never run it (it is a user-side command):
+
+```
+/rename {TICKET_KEY} {Titre du ticket}
+```
+
+Use the provider title. If it is unclear, too long, or misleading, propose a short French summary of the ticket instead.
+
 ## Git worktree management
 
 `EnterWorktree` is a **Claude Code built-in tool** (not a shell command). It creates an isolated git worktree and switches the session into it.
 
 Usage in skills:
-- `EnterWorktree` with `name` = ticket key in lowercase (e.g., `hub-30636`)
+- `EnterWorktree` with `name` = ticket key in lowercase (e.g., `key-30636`)
 - If it fails (e.g., already in a worktree, or tool unavailable) → fall back to classic branch
 
 To check if currently in a worktree: compare `git rev-parse --show-toplevel` against `git worktree list` entries.
 
 ## Décisions section
 
-Created by `/praxis capture`, after **Progression**:
+Created by `/praxis-capture`, after **Progression**:
 
 ```markdown
 ## Décisions
@@ -104,7 +128,7 @@ Types: `new_criterion`, `modified_criterion`, `constraint`, `scope_change`, `cla
 
 ## Ressources section
 
-Created by `/praxis sync`, after **Commentaires**:
+Created by `/praxis-sync`, after **Commentaires**:
 
 ```markdown
 ## Ressources

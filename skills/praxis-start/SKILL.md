@@ -1,15 +1,15 @@
 ---
 name: praxis-start
-description: Set the active ticket and prepare the git environment. Use when the user invokes "/praxis start" followed by a ticket ID (e.g., /praxis start HUB-30636). Updates .current, syncs from the provider, creates a worktree or classic branch (user's choice), and displays ticket status.
+description: Set the active ticket and prepare the git environment. Use when the user invokes "/praxis-start" followed by a ticket ID (e.g., /praxis-start KEY-30636). Updates .current, syncs from the provider, creates a worktree or classic branch (user's choice), and displays ticket status.
 ---
 
-# /praxis start <TICKET_KEY>
+# /praxis-start <TICKET_KEY>
 
 Set the active ticket and prepare the working environment.
 
 ## Argument
 
-`TICKET_KEY` required (e.g., `HUB-30636`). Child ticket ID (not the epic).
+`TICKET_KEY` required (e.g., `KEY-30636`). Child ticket ID (not the epic).
 
 ## References
 
@@ -26,7 +26,7 @@ Per [common.md — Loading the provider](../references/common.md#loading-the-pro
 Look for a `{TICKET_KEY}-*.md` file in `{tracking_dir}/*/`.
 
 - **Found**: deduce epic and folder from parent directory.
-- **Not found**: suggest `/praxis new` with the parent epic. Stop.
+- **Not found**: suggest `/praxis-new` with the parent epic. Stop.
 
 ### 2. Update `.current`
 
@@ -42,7 +42,9 @@ If provider status maps to `todo`, ask confirmation then transition to `active`.
 
 ### 5. Prepare the git environment
 
-**Ask the user**: "Worktree isolé ou branche classique ?"
+**Reset to an up-to-date `main` first**, per [common.md — Starting a ticket: git baseline](../references/common.md#starting-a-ticket--git-baseline). Dirty working tree → stop and ask.
+
+Then **ask the user**: "Worktree isolé ou branche classique ?"
 
 #### Option A: Worktree
 1. Verify not already in a worktree
@@ -57,7 +59,29 @@ If provider status maps to `todo`, ask confirmation then transition to `active`.
 
 `git branch --show-current` → update `Branche` in ticket Infos table.
 
-### 7. Display summary
+### 7. Propose the session rename
 
-Show: ticket (KEY + title), epic, status, progression, branch, worktree path.
-If progression exists → suggest `/praxis check`.
+Per [common.md — Session rename](../references/common.md#session-rename). Display only, never execute.
+
+### 8. Surface relevant lessons
+
+If `{tracking_dir}/lessons.md` exists → score and show the top relevant lessons per [praxis-learn — Review mode](../praxis-learn/SKILL.md#review-mode---review). Skip silently if none scores ≥ 1.
+
+### 9. Resume point
+
+The ticket file is the handoff between sessions (one session per phase: cadrage, implementation, review loop). Rebuild the resume point from it, not from memory:
+
+- **Progression** table (À faire / En cours / Terminé / Blocages)
+- last 5 **Avancement** entries and every **Décisions** row
+- PR state when the Infos table has one: `gh pr view <n> --json state,reviewDecision,mergeable,statusCheckRollup` → open review threads not yet answered count as work to do
+- open questions listed in the epic file (« Questions ouvertes »)
+
+### 10. Display summary
+
+Show: ticket (KEY + title), epic, status, branch, worktree path, the resume point of step 9, relevant lessons, session rename command.
+
+Suggest the next skill from the state, one line:
+- no commit on the branch and no plan → `/plan` (or `/fix` for a small ticket)
+- plan with unfinished phases, or commits without PR → `/praxis-ship`
+- PR open → answer the review, then `/praxis-ship` again for the re-review commit, or `/watch-ats-prs watch <pr>` to be notified
+- everything merged → `/praxis-done`
