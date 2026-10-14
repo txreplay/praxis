@@ -40,7 +40,13 @@
         "apps/api/bff/**"
       ],
       "budget": 5,
-      "interval_sec": 900
+      "interval_sec": 900,
+      "chat_reactions": {
+        "reviewing": "eyes",
+        "commented": "speech_balloon",
+        "changes_requested": "x",
+        "approved": "white_check_mark"
+      }
     },
     "tickets": {
       "jql": "assignee = currentUser() AND statusCategory != Done ORDER BY updated DESC",

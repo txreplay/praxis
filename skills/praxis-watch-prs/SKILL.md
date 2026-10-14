@@ -17,8 +17,8 @@ Load config per common.md, then `watch.prs` and the overlay's `## praxis-watch-p
 ## Non-negotiable rules
 
 - **NEVER post anything without explicit user confirmation** — not a review, not a GitHub comment, not an approval, not a chat message. `AskUserQuestion` every time, even when the review is empty.
-- **One carve-out, and only one: the 👀 reaction** of step 4. It carries no judgement — it says "someone picked this up" — and it is removed the moment the review is posted. Nothing else inherits this exception.
-- **NEVER post in the chat channel**, and never propose it. The channel is read-only here.
+- **Two carve-outs, and only two: the 👀 reaction** of step 4, and the **chat status reactions** of 1.7 (only when `watch.prs.chat_reactions` is set). The 👀 carries no judgement — it says "someone picked this up". A chat status reaction only mirrors a review the user already confirmed on GitHub. Nothing else inherits these exceptions.
+- **NEVER post a message in the chat channel**, and never propose it. Apart from the status reactions of 1.7, the channel is read-only here.
 - **Launching a review needs no approval** when the PR is in scope — except stacked PRs (step 3.4).
 - **READ-ONLY on the user's checkout.** No file modified, no branch checked out, no fix applied. `gh pr diff` to read the diff.
 - **One carve-out for proof: a throwaway git worktree, outside the user's checkout.** A subagent may `git worktree add /tmp/wt-<pr> <sha>`, run the suite and mutations there, and must **delete it when done** and say so. "Here is the one test that falls, and its output" is the version an author accepts without a round-trip.
@@ -198,6 +198,25 @@ gh run list --repo {repo} --workflow "<workflow>" --limit 8 --json event,conclus
 
 Notify once per failing workflow (`notified`), and only when **introduced**. Read only: no re-run, no revert, no fix — not even offered.
 
+### 1.7 Chat status reactions — reconcile every pass
+
+Only when `watch.prs.chat_reactions` is set (watch.md). The review request in the channel carries a reaction that tells its author, and everyone else, where the review stands. Keys and the moment each one applies:
+
+| Key | When |
+|---|---|
+| `reviewing` | Review dispatched (step 4) |
+| `commented` | Our effective verdict is `COMMENTED` |
+| `changes_requested` | Our effective verdict is `CHANGES_REQUESTED` |
+| `approved` | Our effective verdict is `APPROVED` |
+
+**Effective verdict** = GitHub is the source of truth, not the state file: among `$ME`'s reviews on the PR (`/pulls/<N>/reviews`), the last `APPROVED` or `CHANGES_REQUESTED` one; none, or the last one `DISMISSED` → `COMMENTED` if `$ME` posted any review at all; nothing → no verdict yet. A `COMMENT` posted after a `REQUEST_CHANGES` leaves the block in place on GitHub, so the reaction stays `changes_requested`.
+
+**Every pass**, for each `watched` entry with a `slackTs`, plus each PR posted this pass: compute the expected set (`reviewing` once dispatched, plus the effective verdict's key), add every expected emoji missing from the entry's `chatReactions` through the source adapter (*React to a message*), append it to `chatReactions`. This also catches a review the user posted by hand, outside the skill.
+
+**Reactions accumulate.** The adapter can add a reaction, not remove one: 👀 stays next to the verdict, and a later verdict stacks on an earlier one. Read the state as the most advanced emoji, in the order `approved` > `changes_requested` > `commented` > `reviewing`. The one case this order misreads — `changes_requested` after an earlier `approved` — goes in the report as one line telling the user to remove the stale emoji by hand.
+
+A failed reaction never blocks the pass: one line in the report, the next pass retries it.
+
 ---
 
 ## 2. PHASE B — CHANNEL SCAN
@@ -268,6 +287,8 @@ gh api "repos/{repo}/issues/<N>/reactions" --jq '.[] | select(.content=="eyes" a
 ```
 
 Store `reactionId` **only on `201`**. `200` means the reaction already existed — the user's own, never to be removed. A failed reaction never blocks the review.
+
+**Chat `reviewing` reaction**, same turn, when `watch.prs.chat_reactions` is set: add it on the request message (`slackTs`) and append it to `chatReactions` (1.7). On a re-review it is usually already there: skip.
 
 **One subagent per PR, all in one message**: `subagent_type: "general-purpose"`, `name: "review-<pr>-<HHMM>"` (never a bare `review-<pr>` — names collide), `run_in_background: false`. Store the name the harness actually returns. A backgrounded subagent's plain text never reaches you — the prompt makes `SendMessage` mandatory; keep that paragraph.
 
@@ -350,7 +371,8 @@ Re-review: unresolved and new findings only; resolved ones are never re-posted. 
 ### After posting
 
 1. **Remove the 👀 first**: `gh api "repos/{repo}/issues/<N>/reactions/<reactionId>" -X DELETE` — only the id you stored; no `reactionId` = not yours.
-2. `APPROVE` → drop from `watched`. Otherwise → `awaiting-fix`, `reviewedSha` = the SHA posted against; delete the draft, drop `dispatchedAt`, `reactionId`, `trigger`.
+2. **Chat verdict reaction** (when `watch.prs.chat_reactions` is set): reconcile this PR per 1.7 right away, before it can leave `watched` — an approved PR is dropped next.
+3. `APPROVE` → drop from `watched`. Otherwise → `awaiting-fix`, `reviewedSha` = the SHA posted against; delete the draft, drop `dispatchedAt`, `reactionId`, `trigger`.
 
 ---
 
@@ -402,7 +424,8 @@ Per watch.md › Next pass, with `watch.prs.interval_sec`. Skipped under `chaine
       "slackTs": "1785478448.604459",
       "title": "…", "author": "gh-login", "slackUser": "jane.doe", "ticket": "KEY-1",
       "scope": "all", "sha": "a1b2c3d", "reviewedSha": "9f8e7d6",
-      "state": "awaiting-fix", "lastAction": "2026-07-31T09:12:00Z"
+      "state": "awaiting-fix", "lastAction": "2026-07-31T09:12:00Z",
+      "chatReactions": ["eyes", "speech_balloon"]
     },
     "102": {
       "state": "reviewing", "agent": "review-102-0904", "dispatchedAt": "2026-07-31T09:04:00Z",
@@ -420,7 +443,7 @@ Per watch.md › Next pass, with `watch.prs.interval_sec`. Skipped under `chaine
 }
 ```
 
-`state` ∈ `queued` · `reviewing` · `pending-approval` · `awaiting-fix` · `parked`. `agent` exists only while `reviewing`. `dispatchedAt` survives into `pending-approval` (staleness cutoff) and is dropped once posted. `reactionId` exists only when this skill created the reaction (`201`). `scope` ∈ `all` · `contract` (a legacy `frontend` value means `contract`). `ignored.reason` ∈ `backend-only` · `own-pr` · `closed` · `stacked-declined` · `user-request`. `source` ∈ `slack` · `manual`. `author` is the GitHub login, `slackUser` the chat handle — never substitute one for the other.
+`state` ∈ `queued` · `reviewing` · `pending-approval` · `awaiting-fix` · `parked`. `agent` exists only while `reviewing`. `dispatchedAt` survives into `pending-approval` (staleness cutoff) and is dropped once posted. `reactionId` exists only when this skill created the reaction (`201`). `chatReactions` lists the emoji names already added on the request message (1.7) — reactions are never removed, so the list only grows. `scope` ∈ `all` · `contract` (a legacy `frontend` value means `contract`). `ignored.reason` ∈ `backend-only` · `own-pr` · `closed` · `stacked-declined` · `user-request`. `source` ∈ `slack` · `manual`. `author` is the GitHub login, `slackUser` the chat handle — never substitute one for the other.
 
 `reviewedSha` is a cache: GitHub (`/pulls/<N>/reviews` filtered on `$ME`) is the source of truth.
 
