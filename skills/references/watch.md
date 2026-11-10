@@ -23,6 +23,7 @@ Everything project-specific lives in the project's `praxis.json` (gitignored by 
       "scope_contract_globs": ["apps/api/bff/**"],
       "budget": 5,
       "interval_sec": 900,
+      "ready_label": "team:in-review",
       "chat_reactions": {
         "reviewing": "eyes",
         "commented": "speech_balloon",
@@ -52,6 +53,7 @@ Everything project-specific lives in the project's `praxis.json` (gitignored by 
 | `watch.prs.scope_all_globs` | Changed files that make the PR reviewable in full | required |
 | `watch.prs.scope_contract_globs` | Changed files reviewed as a contract only (DTOs, generated types) | `[]` |
 | `watch.prs.budget` | Review subagents per pass | `5` |
+| `watch.prs.ready_label` | GitHub label the author puts on a PR ready for review, removes while fixing, puts back to ask for a re-review. Becomes a second request source and the strongest re-review signal — see `praxis-watch-prs` › 1.1, 1.3c, 2. Absent → label ignored | none |
 | `watch.prs.chat_reactions` | Emoji names (`reviewing`, `commented`, `changes_requested`, `approved`) added on the review request to show where the review stands — see `praxis-watch-prs` › 1.7. Absent → no chat reaction at all | none |
 | `watch.tickets.jql` | Provider query for the user's assigned, not-done tickets | required |
 | `watch.tickets.budget` | Pre-reads per pass | `2` |

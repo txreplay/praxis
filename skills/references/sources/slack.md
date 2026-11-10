@@ -23,8 +23,10 @@ A converted timestamp is good enough for the scan cursor, never for a message re
 ## Read a thread
 
 ```
-mcp__claude_ai_Slack__slack_read_thread(channel_id="{channel}", message_ts="{slackTs}")
+mcp__claude_ai_Slack__slack_read_thread(channel_id="{channel}", message_ts="{slackTs}", oldest="{lastThreadTs}", response_format="detailed")
 ```
+
+The channel history (above) returns only top-level messages newer than the cursor: a reply posted today in the thread of yesterday's request never shows up there. Reading the thread is the only way to see it. `oldest` keeps only newer replies, but the parent message comes back too — drop it (its `ts` equals `message_ts`). `"detailed"` gives each reply's exact `Message TS`, which becomes the new `lastThreadTs`.
 
 ## Draft a message
 

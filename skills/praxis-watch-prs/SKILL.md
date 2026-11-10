@@ -93,14 +93,15 @@ Then treat it as a returned review: persist the draft (step 4), staleness check 
 - `MERGED` / `CLOSED` → drop from `watched`, one line, delete any `{state}/reviews/<pr>-*.json`.
 - `isDraft` true → keep, mark `parked`, skip.
 - Head SHA = last entry of `commits`.
+- **Ready label** (only when `watch.prs.ready_label` is set): fetch `labels` too. An entry with `labelFlow: true` whose label is **absent** → the author took it back to fix it: mark `parked` (`label-removed`), launch nothing, skip 1.3 except the label probe of 1.3c. A PR announced by hand (`labelFlow` false) never had the label: its absence means nothing.
 
 **Never loop `gh` sequentially over the list** — ten sequential `gh pr view` exceed the two-minute Bash default and lose the pass. Fan out, one atomic write per worker, sorted:
 
 ```bash
 printf '%s\n' <pr> <pr> … \
   | xargs -P 6 -I{} sh -c 'r=$(gh pr view {} --repo {repo} \
-      --json state,isDraft,commits \
-      --jq "\"\(.state) draft=\(.isDraft) head=\(.commits|last|.oid)\""); \
+      --json state,isDraft,commits,labels \
+      --jq "\"\(.state) draft=\(.isDraft) head=\(.commits|last|.oid) labels=\([.labels[].name]|join(\",\"))\""); \
       printf "%s %s\n" "{}" "$r"' \
   | sort
 ```
@@ -122,7 +123,9 @@ gh api "repos/{repo}/issues/<N>/comments?per_page=100" --jq '.[] | {user: .user.
 gh api "repos/{repo}/pulls/<N>/comments?per_page=100" --jq '.[] | {user: .user.login, created_at, in_reply_to_id, body: .body[:200]}'
 ```
 
-Never `--paginate` repo-wide comment endpoints — scope to the PR. Also the request's thread via the source adapter.
+Never `--paginate` repo-wide comment endpoints — scope to the PR.
+
+**The request's chat thread is a signal too, and the channel scan never sees it**: a reply in the thread of an earlier message is not returned by the channel history (Phase B). For every entry with a `slackTs`, read the thread through the source adapter (*Read a thread*, `oldest` = `lastThreadTs`, or the dispatch time when absent), fan out like 1.1. Keep the replies newer than `lastThreadTs` that are not from the user — a bot's included: some review bots post the new round in the thread. A reply that mentions the user and asks for another look → author signal, whoever posted it. From the PR author → apply the keywords below. From anyone else → one report line (who, what they ask); a question addressed to the user goes in the notification of step 5. Advance `lastThreadTs` to the newest reply read, after reporting.
 
 Keywords from the **PR author**: `corrigé`, `corrigée`, `fixed`, `adressé`, `addressed`, `c'est bon`, `relance`, `up`, `updated`, `push`, `done`, `ready`. A signal with **no new commit** is not a trigger — log it.
 
@@ -135,9 +138,19 @@ gh api "repos/{repo}/compare/<reviewedSha>...<head>" \
 
 Scan for the keywords plus `answer`, `address`, `review`, `thread`, `feedback`, `nit`. Filter on the author's own commits (a rebase drags in foreign subjects). A subject naming a review is a claim the round must verify.
 
+**c) Ready label put back** (only when `watch.prs.ready_label` is set) — the strongest signal, and the only one the chat never shows: putting the label back notifies the earlier reviewers but posts nothing new in the channel.
+
+```bash
+gh api "repos/{repo}/issues/<N>/timeline?per_page=100" \
+  | jq --arg l "{ready_label}" --arg t "<reviewedAt>" \
+      '[.[] | select((.event=="labeled" or .event=="unlabeled") and .label.name==$l and .created_at > $t)] | last | {event, at: .created_at, by: .actor.login}'
+```
+
+Last event `labeled` after `reviewedAt` → trigger (reason `label`), bypasses the debounce, clears `parked`. It also counts without a new commit — the author may have answered in threads only; 1.4 then sizes the round. Last event `unlabeled` → `parked` per 1.1. An entry without `reviewedAt` (never reviewed by us) uses `dispatchedAt` or `lastAction`.
+
 ### 1.4 Queue it
 
-A triggered PR enters the queue as a **re-review** with its reason (`debounce` / `signal`). **A nit alone does not earn a round** — a round costs an agent and one arbitration by hand, and rounds that produce nothing are common:
+A triggered PR enters the queue as a **re-review** with its reason (`debounce` / `signal` / `label`). **A nit alone does not earn a round** — a round costs an agent and one arbitration by hand, and rounds that produce nothing are common:
 
 | What the new commits address | What you do |
 |---|---|
@@ -162,6 +175,8 @@ gh api "repos/{repo}/pulls/$N/comments?per_page=100" \
 gh api "repos/{repo}/issues/$N/comments?per_page=100" \
   | jq --arg t "$T" --arg me "$ME" '.[] | select(.created_at > $t and .user.login != $me and .user.type != "Bot") | {kind:"issue", user:.user.login, at:.created_at, body:.body[:400]}'
 ```
+
+Also read the request's chat thread as in 1.3b (`lastThreadTs`): a question asked there, by anyone but the user, is an incoming event like a GitHub comment.
 
 Exclude `$ME` and bots on every axis. Anything found → the `PushNotification` of step 5 (« #N : review de @x (CHANGES_REQUESTED, 3 commentaires) ») and a report entry sized to the event: who, event, count, substance of the blocking points. `lastSeenTs` advances **only after** reporting. Do not offer to answer, fix or push — this is a notification channel.
 
@@ -225,6 +240,24 @@ Read the channel through the source adapter, messages strictly newer than `lastS
 
 Extract `github\.com/{repo}/pull/(\d+)` from every message. Other repos → dropped silently. A relance unfurls an earlier message: dedupe by PR number; a relance on a watched PR counts as an author signal (1.3b). Several PRs in one message → several references. `lastScanTs` advances to the newest message only at step 6.
 
+**Second source — the ready label** (only when `watch.prs.ready_label` is set). An announcement can be missed (bot down, message deleted, posted elsewhere); the label cannot. Once per pass, independent of the chat source — it runs even when the adapter fails:
+
+```bash
+gh pr list --repo {repo} --label "{ready_label}" --state open --limit 100 \
+  --json number,author,isDraft,title,headRefOid \
+  --jq '.[] | "\(.number) \(.author.login) draft=\(.isDraft) head=\(.headRefOid[:9]) \(.title)"'
+```
+
+A PR already in `watched`, `myPRs` or `ignored` (same head for `backend-only`) → nothing, 1.x handles it. The label lists PRs from before the state's memory too (a previous session, a state reset), so **ask GitHub what the user already did** before treating one as new — `gh api "repos/{repo}/pulls/<N>/reviews?per_page=100" --jq '[.[] | select(.user.login=="'"$ME"'")] | last | {state, commit_id, submitted_at}'`:
+
+| The user's last review | What you do |
+|---|---|
+| `APPROVED` at the current head | Nothing, silently. |
+| Any review at an older head | Enter `watched` as `awaiting-fix`, `reviewedSha` = its `commit_id`, `reviewedAt` = its `submitted_at`, `labelFlow: true`. 1.3 decides on the next pass. |
+| None | A new reference |
+
+Any new reference goes to step 3 for step 3 with `slackTs: null` and `slackUser` unknown (report the GitHub login, recover the handle from the channel later if it shows up). Phase B dedupes the two sources by PR number; the chat message wins when both exist, since it carries `slackTs`.
+
 ---
 
 ## 3. CLASSIFY
@@ -234,8 +267,10 @@ First rule that fires wins.
 ### 3.1 Hard filters
 
 ```bash
-gh pr view <N> --repo {repo} --json author,isDraft,state,title,body,baseRefName,url
+gh pr view <N> --repo {repo} --json author,isDraft,state,title,body,baseRefName,url,labels
 ```
+
+When `watch.prs.ready_label` is set and the PR carries it, record `labelFlow: true` on the entry: its later absence then means "back in correction" (1.1).
 
 | Condition | Outcome |
 |---|---|
@@ -372,7 +407,7 @@ Re-review: unresolved and new findings only; resolved ones are never re-posted. 
 
 1. **Remove the 👀 first**: `gh api "repos/{repo}/issues/<N>/reactions/<reactionId>" -X DELETE` — only the id you stored; no `reactionId` = not yours.
 2. **Chat verdict reaction** (when `watch.prs.chat_reactions` is set): reconcile this PR per 1.7 right away, before it can leave `watched` — an approved PR is dropped next.
-3. `APPROVE` → drop from `watched`. Otherwise → `awaiting-fix`, `reviewedSha` = the SHA posted against; delete the draft, drop `dispatchedAt`, `reactionId`, `trigger`.
+3. `APPROVE` → drop from `watched`. Otherwise → `awaiting-fix`, `reviewedSha` = the SHA posted against, `reviewedAt` = the posting time (the cutoff of 1.3c); delete the draft, drop `dispatchedAt`, `reactionId`, `trigger`.
 
 ---
 
@@ -425,7 +460,8 @@ Per watch.md › Next pass, with `watch.prs.interval_sec`. Skipped under `chaine
       "title": "…", "author": "gh-login", "slackUser": "jane.doe", "ticket": "KEY-1",
       "scope": "all", "sha": "a1b2c3d", "reviewedSha": "9f8e7d6",
       "state": "awaiting-fix", "lastAction": "2026-07-31T09:12:00Z",
-      "chatReactions": ["eyes", "speech_balloon"]
+      "chatReactions": ["eyes", "speech_balloon"],
+      "reviewedAt": "2026-07-31T09:12:00Z", "labelFlow": true, "lastThreadTs": "1785479012.000100"
     },
     "102": {
       "state": "reviewing", "agent": "review-102-0904", "dispatchedAt": "2026-07-31T09:04:00Z",
@@ -443,7 +479,7 @@ Per watch.md › Next pass, with `watch.prs.interval_sec`. Skipped under `chaine
 }
 ```
 
-`state` ∈ `queued` · `reviewing` · `pending-approval` · `awaiting-fix` · `parked`. `agent` exists only while `reviewing`. `dispatchedAt` survives into `pending-approval` (staleness cutoff) and is dropped once posted. `reactionId` exists only when this skill created the reaction (`201`). `chatReactions` lists the emoji names already added on the request message (1.7) — reactions are never removed, so the list only grows. `scope` ∈ `all` · `contract` (a legacy `frontend` value means `contract`). `ignored.reason` ∈ `backend-only` · `own-pr` · `closed` · `stacked-declined` · `user-request`. `source` ∈ `slack` · `manual`. `author` is the GitHub login, `slackUser` the chat handle — never substitute one for the other.
+`state` ∈ `queued` · `reviewing` · `pending-approval` · `awaiting-fix` · `parked`. `agent` exists only while `reviewing`. `dispatchedAt` survives into `pending-approval` (staleness cutoff) and is dropped once posted. `reactionId` exists only when this skill created the reaction (`201`). `chatReactions` lists the emoji names already added on the request message (1.7) — reactions are never removed, so the list only grows. `reviewedAt` is when our last review was posted (1.3c cutoff). `labelFlow` is true once the PR was seen carrying `ready_label`. `lastThreadTs` is the newest reply read in the request's chat thread (1.3b, 1.5), on `watched` and `myPRs` entries alike. `parked` carries an optional `parkedReason` ∈ `draft` · `label-removed` · `stacked-base`. `scope` ∈ `all` · `contract` (a legacy `frontend` value means `contract`). `ignored.reason` ∈ `backend-only` · `own-pr` · `closed` · `stacked-declined` · `user-request`. `source` ∈ `slack` · `manual`. `author` is the GitHub login, `slackUser` the chat handle — never substitute one for the other.
 
 `reviewedSha` is a cache: GitHub (`/pulls/<N>/reviews` filtered on `$ME`) is the source of truth.
 
