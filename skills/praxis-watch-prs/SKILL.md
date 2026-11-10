@@ -339,6 +339,8 @@ Prompt template:
 >
 > You may prove a finding by mutation in a throwaway worktree outside the user's checkout (`git worktree add /tmp/wt-<N> <sha>`); delete it when done and say so. Never touch the user's working tree.
 >
+> [IF LARGE — delta of ~20 files or more, front and back together, or a DB-backed suite to run] Run each mutant against the one spec that must fall, never alongside a whole suite. Cap every test command at 300 s with a foreground Bash `timeout`; never `run_in_background`, never end your turn waiting on a command. A run that hits the cap is reported as unproven, not retried with a bigger scope.
+>
 > **Deliver your result with `SendMessage({to: "main", ...})` — mandatory, the only channel that works.** Your plain text output is NOT visible to the orchestrator; a review written as your final message reaches nobody. Do not end your turn on a review you have not sent. If the send fails, retry; do not fall back to plain text.
 >
 > Send exactly, in one message:
