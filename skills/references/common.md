@@ -13,7 +13,7 @@ Every skill starts with:
 
 If `praxis.json` is missing → ask the user to create one.
 
-**Provider CLI check**: Before any provider command, verify the CLI is installed (e.g., `which jira`). If missing → stop with: "CLI `{provider}` introuvable. Voir le fichier provider pour les instructions d'installation."
+**Provider transport check**: Before any provider command, pick the transport per the provider file's Prerequisites — the connector (MCP) when its tools are available, else the CLI (e.g., `which jira`). If neither is available → stop with: "Ni connecteur ni CLI `{provider}` disponible. Voir le fichier provider pour l'installation."
 
 ## Status model (provider-agnostic)
 
@@ -158,10 +158,10 @@ These actions affect shared state or are user-visible and **must NEVER be execut
 
 | Action                                         | Required authorization                                  |
 | ---------------------------------------------- | ------------------------------------------------------- |
-| `jira issue comment add` (provider comment)    | Display the FULL drafted comment, wait for "poste"/"ok" |
+| Provider comment (connector or CLI)            | Display the FULL drafted comment, wait for "poste"/"ok" |
 | `git push` (any remote)                        | Ask before pushing, even on a feature branch            |
 | `gh pr create` / `gh pr merge` / `gh pr close` | Ask before creating or changing any PR                  |
-| `jira issue move` / transitions to `done`      | Ask before transitioning to Done/Closed                 |
+| Provider transition to `done`                  | Ask before transitioning to Done/Closed                 |
 | Closing / deleting a remote branch             | Ask before any remote deletion                          |
 
 **Drafting ≠ sending.** A user message like "poste un commentaire pour dire X" is a drafting request. You must:

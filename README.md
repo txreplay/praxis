@@ -103,7 +103,7 @@ The overlay adds to a skill; it never relaxes a human gate. Before committing to
 
 ## Providers and sources
 
-- **Task manager** — `skills/references/providers/`. Supported: **Jira** (jira CLI, or the Atlassian connector when available). Adding one = one markdown file implementing the provider contract (fetch, list children, search, transition, comment, create, status mapping, URL).
+- **Task manager** — `skills/references/providers/`. Supported: **Jira** (Atlassian connector first, jira CLI as fallback). Adding one = one markdown file implementing the provider contract (fetch, list children, search, transition, comment, create, status mapping, URL).
 - **Chat** (review requests) — `skills/references/sources/`. Supported: **Slack** (read-only, drafts only).
 
 ## How it works
