@@ -36,7 +36,7 @@ Load config per common.md, then `watch.prs` and the overlay's `## praxis-watch-p
 | *(none)* | Normal pass |
 | `status` | Print the state table and stop. No chat call, no review, no `gh`. |
 | `stop <pr>` | Move `<pr>` to `ignored` with reason `user-request`, permanently. Confirm in one line, stop. |
-| `force <pr>` | Review `<pr>` this pass whatever the classification says (bypasses scope, draft, own-PR, stacked, nit-only delta). |
+| `force <pr>` | Review `<pr>` this pass whatever the classification says (bypasses scope, draft, own-PR, stacked, nit-only delta, approvals gate). |
 | `watch <pr> [<pr>…]` | Add to `myPRs` (step 1.5). Baseline `lastSeenTs` at the end of the previous pass, not now. Then run the pass. |
 | `unwatch <pr>` | Drop `<pr>` from `myPRs` **and** `mergeWatch`. Confirm in one line, stop. |
 | `chained` | Invoked by `/praxis-watch`: run the pass, skip §7, hand the report back. |
@@ -248,7 +248,7 @@ gh pr list --repo {repo} --label "{ready_label}" --state open --limit 100 \
   --jq '.[] | "\(.number) \(.author.login) draft=\(.isDraft) head=\(.headRefOid[:9]) \(.title)"'
 ```
 
-A PR already in `watched`, `myPRs` or `ignored` (same head for `backend-only`) → nothing, 1.x handles it. The label lists PRs from before the state's memory too (a previous session, a state reset), so **ask GitHub what the user already did** before treating one as new — `gh api "repos/{repo}/pulls/<N>/reviews?per_page=100" --jq '[.[] | select(.user.login=="'"$ME"'")] | last | {state, commit_id, submitted_at}'`:
+A PR already in `watched`, `myPRs` or `ignored` (same head for `backend-only` and `enough-approvals`) → nothing, 1.x handles it. The label lists PRs from before the state's memory too (a previous session, a state reset), so **ask GitHub what the user already did** before treating one as new — `gh api "repos/{repo}/pulls/<N>/reviews?per_page=100" --jq '[.[] | select(.user.login=="'"$ME"'")] | last | {state, commit_id, submitted_at}'`:
 
 | The user's last review | What you do |
 |---|---|
@@ -294,7 +294,7 @@ The message contains one of `frontend_markers` (case-insensitive) → in scope, 
 | none of those, but any `scope_contract_globs` | in scope, `scope=contract` — DTO shape, field names, optionality, generated types, error contract; not the internals. **Check the diff first**: a change that leaves the consumer-visible contract untouched is `backend-only`. |
 | neither | `ignored` (`backend-only`), record the SHA |
 
-A `backend-only` PR is re-checked if still open and its head moved.
+A `backend-only` or `enough-approvals` PR is re-checked if still open and its head moved.
 
 ### 3.4 Stacked PRs — ask before launching
 
@@ -309,6 +309,16 @@ Two or more watched PRs sharing a ticket key → suggest `/praxis-review-pr <url
 ## 4. DISPATCH REVIEWS
 
 **Presence gate first** (watch.md). Away → dispatch nothing, report the queue.
+
+**Approvals gate** (only when `watch.prs.approvals_enough` is set), for every queued PR, new or re-review, right before dispatch. Count the humans whose last decisive review is an approval — a later `CHANGES_REQUESTED` or `DISMISSED` from the same reviewer cancels theirs; the user's own counts:
+
+```bash
+gh api "repos/{repo}/pulls/<N>/reviews?per_page=100" \
+  | jq '[.[] | select(.user.type != "Bot" and (.state=="APPROVED" or .state=="CHANGES_REQUESTED" or .state=="DISMISSED"))]
+        | group_by(.user.login) | map(last) | map(select(.state=="APPROVED")) | length'
+```
+
+Count ≥ `approvals_enough` → the PR is cleared, another round adds nothing: no agent, no 👀. Move it to `ignored` (`enough-approvals`) with the head SHA, out of `watched`; report one line with the count. Re-checked like `backend-only` when its head moves — a push may dismiss stale approvals. `force <pr>` overrides it.
 
 **Budget**: re-reviews first, then new PRs oldest first, `watch.prs.budget` max. Say how many are left. When several reviews come back at once, group the confirmations into one `AskUserQuestion`.
 
@@ -481,7 +491,7 @@ Per watch.md › Next pass, with `watch.prs.interval_sec`. Skipped under `chaine
 }
 ```
 
-`state` ∈ `queued` · `reviewing` · `pending-approval` · `awaiting-fix` · `parked`. `agent` exists only while `reviewing`. `dispatchedAt` survives into `pending-approval` (staleness cutoff) and is dropped once posted. `reactionId` exists only when this skill created the reaction (`201`). `chatReactions` lists the emoji names already added on the request message (1.7) — reactions are never removed, so the list only grows. `reviewedAt` is when our last review was posted (1.3c cutoff). `labelFlow` is true once the PR was seen carrying `ready_label`. `lastThreadTs` is the newest reply read in the request's chat thread (1.3b, 1.5), on `watched` and `myPRs` entries alike. `parked` carries an optional `parkedReason` ∈ `draft` · `label-removed` · `stacked-base`. `scope` ∈ `all` · `contract` (a legacy `frontend` value means `contract`). `ignored.reason` ∈ `backend-only` · `own-pr` · `closed` · `stacked-declined` · `user-request`. `source` ∈ `slack` · `manual`. `author` is the GitHub login, `slackUser` the chat handle — never substitute one for the other.
+`state` ∈ `queued` · `reviewing` · `pending-approval` · `awaiting-fix` · `parked`. `agent` exists only while `reviewing`. `dispatchedAt` survives into `pending-approval` (staleness cutoff) and is dropped once posted. `reactionId` exists only when this skill created the reaction (`201`). `chatReactions` lists the emoji names already added on the request message (1.7) — reactions are never removed, so the list only grows. `reviewedAt` is when our last review was posted (1.3c cutoff). `labelFlow` is true once the PR was seen carrying `ready_label`. `lastThreadTs` is the newest reply read in the request's chat thread (1.3b, 1.5), on `watched` and `myPRs` entries alike. `parked` carries an optional `parkedReason` ∈ `draft` · `label-removed` · `stacked-base`. `scope` ∈ `all` · `contract` (a legacy `frontend` value means `contract`). `ignored.reason` ∈ `backend-only` · `enough-approvals` · `own-pr` · `closed` · `stacked-declined` · `user-request`. `source` ∈ `slack` · `manual`. `author` is the GitHub login, `slackUser` the chat handle — never substitute one for the other.
 
 `reviewedSha` is a cache: GitHub (`/pulls/<N>/reviews` filtered on `$ME`) is the source of truth.
 
