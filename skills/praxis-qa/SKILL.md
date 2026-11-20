@@ -49,7 +49,7 @@ Never open `localhost:<port>` directly when the overlay names a proxied domain: 
 
 ## 2. Design capture
 
-For each design node linked in the ticket: `mcp__Figma__get_metadata` on the parent section (node ids higher than the linked ones were added after the cadrage), then `mcp__Figma__get_screenshot`. Note the capture time.
+For each design node linked in the ticket: the Figma MCP `get_metadata` on the parent section (node ids higher than the linked ones were added after the cadrage), then `get_screenshot`. Note the capture time. Match the tools by name, whatever server prefix the Figma connector carries; if they are not loaded, find them with ToolSearch. Never read the design in a browser instead: a Figma canvas exposes pixels, not nodes or values — if no Figma read tool is available, say so and stop this step.
 
 ## 3. Walkthrough (claude-in-chrome)
 

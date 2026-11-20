@@ -54,7 +54,7 @@ Four sources, each with its own verdict line in the report:
 |---|---|
 | Ticket AC | Invoke the `praxis-check` skill → coverage table (diff scope `BASE...HEAD`). Every ❌ / ⚠️ is fixed now or becomes a named question. |
 | Comments & attachments | Each comment that states a rule or an expectation → point to the code that honours it, or fix. |
-| Figma | Re-fetch **now** every node linked in the ticket: `mcp__Figma__get_metadata` on the parent section first (node ids higher than the linked ones = added after the cadrage), then `mcp__Figma__get_screenshot`. A linked node that belongs to another screen or ticket → correct the ticket file and say so in the report. Update `Ressources › Figma › Dernière capture`. The comparison with the UI happens at stage 4 against these captures, not from memory. |
+| Figma | Re-fetch **now** every node linked in the ticket: the Figma MCP `get_metadata` on the parent section first (node ids higher than the linked ones = added after the cadrage), then `get_screenshot`. A linked node that belongs to another screen or ticket → correct the ticket file and say so in the report. Update `Ressources › Figma › Dernière capture`. The comparison with the UI happens at stage 4 against these captures, not from memory. |
 | Décisions & pasted Slack threads | Each decision recorded in the ticket file or pasted in this session → honoured, or the deviation is a named question. |
 
 ### 3. Review gate

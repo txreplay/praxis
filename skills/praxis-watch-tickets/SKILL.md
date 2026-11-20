@@ -55,7 +55,7 @@ Candidates: status category `new` only (others with `force`). Order: priority (h
 Everything is stored; nothing is decided.
 
 1. **Ticket** — provider « Fetch a ticket in full »: description, AC, comments, links (design, spec, PR, chat), parent (context only), linked issues (key + status). Attachments listed by name, never claimed as read; when one obviously carries the expectation, a question asks what it shows.
-2. **Design** — each Figma link: `mcp__Figma__get_metadata` on the node, `mcp__Figma__get_screenshot`; 2–3 sentences on the screen and every state drawn (empty, error, disabled, tooltip).
+2. **Design** — each Figma link: the Figma MCP `get_metadata` on the node, `get_screenshot`; 2–3 sentences on the screen and every state drawn (empty, error, disabled, tooltip).
 3. **Spec** — each Notion link: `mcp__notion__notion-fetch`; the rules relevant to the AC.
 4. **Code readiness** (read-only, from `origin/main`). Follow the overlay's **Code readiness** recipe when it has one — it knows the project layout. Otherwise, generically: decide the kind (front / back / content) from prefix, labels and description; `rg` the implied route, DTO or entity; find the closest existing feature; check whether a named feature flag exists (its state on an environment is a question **for the user**); PRs cited → `gh pr view <n> --json state,mergedAt`.
 5. **Triage** — size S/M/L with the signals of `praxis-triage`, recommended workflow.
