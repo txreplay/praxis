@@ -1,6 +1,6 @@
 ---
 name: praxis-start
-description: Set the active ticket and prepare the git environment. Use when the user invokes "/praxis-start" followed by a ticket ID (e.g., /praxis-start KEY-30636). Updates .current, syncs from the provider, creates a worktree or classic branch (user's choice), and displays ticket status.
+description: Set the active ticket and prepare the git environment. Use when the user invokes "/praxis-start" followed by a ticket ID (e.g., /praxis-start KEY-30636). Syncs from the provider, creates a worktree or classic branch (user's choice; .current only for the classic branch), and displays ticket status.
 ---
 
 # /praxis-start <TICKET_KEY>
@@ -28,9 +28,9 @@ Look for a `{TICKET_KEY}-*.md` file in `{tracking_dir}/*/`.
 - **Found**: deduce epic and folder from parent directory.
 - **Not found**: suggest `/praxis-new` with the parent epic. Stop.
 
-### 2. Update `.current`
+### 2. `.current` — deferred
 
-Write `{tracking_dir}/.current` with epic (deduced from folder, or `null` if standalone), ticket, folder.
+Written at step 6, and only for a classic branch: see [common.md — Active ticket resolution](../references/common.md#active-ticket-resolution).
 
 ### 3. Sync from provider
 
@@ -42,22 +42,22 @@ If provider status maps to `todo`, ask confirmation then transition to `active`.
 
 ### 5. Prepare the git environment
 
-**Reset to an up-to-date `main` first**, per [common.md — Starting a ticket: git baseline](../references/common.md#starting-a-ticket--git-baseline). Dirty working tree → stop and ask.
+Already in a worktree → option A, no question. Else **ask the user**: "Worktree isolé ou branche classique ?"
 
-Then **ask the user**: "Worktree isolé ou branche classique ?"
+Start from an up-to-date `main` per [common.md — Starting a ticket: git baseline](../references/common.md#starting-a-ticket--git-baseline) — the worktree variant never touches the main checkout. Dirty working tree → stop and ask.
 
 #### Option A: Worktree
-1. Verify not already in a worktree
-2. `EnterWorktree` with `name` = ticket key lowercase
-3. On failure → fall back to option B
+Per [common.md — Git worktree management](../references/common.md#git-worktree-management): stay in the current worktree or `EnterWorktree` with `name` = ticket key lowercase, then create the ticket's branch `fix/{ticket-key-lowercase}-{slug}` from `origin/main`. On failure → ask before option B.
 
 #### Option B: Classic branch
 1. Suggest branch name: `fix/{ticket-key-lowercase}-{slug}`
 2. `git fetch origin main && git checkout -b {name} origin/main`
 
-### 6. Update Branch field
+### 6. Update Branch field and `.current`
 
 `git branch --show-current` → update `Branche` in ticket Infos table.
+
+Option B only: write `{tracking_dir}/.current` with epic (deduced from folder, or `null` if standalone), ticket, folder. Option A never writes it.
 
 ### 7. Propose the session rename
 

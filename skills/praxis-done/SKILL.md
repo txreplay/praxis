@@ -54,7 +54,7 @@ If ticket has **Décisions** entries → suggest `/praxis-learn` to promote to c
 
 ### 6. Move to next ticket
 
-Look in epic for next `todo` or `active` ticket → update `.current`, suggest `/praxis-start`.
+Look in epic for next `todo` or `active` ticket → suggest `/praxis-start`. Update `.current` to it only if `.current` named the closed ticket; a ticket closed from a worktree never touches `.current`.
 If no next ticket → "Tous les tickets de l'epic sont terminés ou en revue."
 If standalone (`epic: null`) → skip.
 

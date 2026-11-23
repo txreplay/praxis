@@ -13,6 +13,8 @@ Every skill starts with:
 
 If `praxis.json` is missing → ask the user to create one.
 
+**Worktrees**: `praxis.json` and `{tracking_dir}` are git-ignored, so they exist only in the main checkout, at `dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`. From a worktree, read and write tracking files there — never create a `{tracking_dir}` inside the worktree.
+
 **Provider transport check**: Before any provider command, pick the transport per the provider file's Prerequisites — the connector (MCP) when its tools are available, else the CLI (e.g., `which jira`). If neither is available → stop with: "Ni connecteur ni CLI `{provider}` disponible. Voir le fichier provider pour l'installation."
 
 ## Status model (provider-agnostic)
@@ -29,24 +31,28 @@ Unmapped provider status → keep original.
 
 ## Active ticket resolution
 
+Several tickets can be in progress at once: one in the main checkout, one per worktree. `.current` names the main checkout's ticket only.
+
 Priority order (first that resolves):
 
 1. `TICKET_KEY` argument if provided
-2. `{tracking_dir}/.current` → `ticket` field
-3. Git branch (`git branch --show-current` → extract `ticket_pattern`)
+2. In a worktree (`git rev-parse --absolute-git-dir` ≠ `--git-common-dir`): the key in the branch (`git branch --show-current` → `ticket_pattern`, case-insensitive), else in the worktree folder name. Never `.current`.
+3. In the main checkout: `{tracking_dir}/.current` → `ticket` field, then the key in the branch
 4. Ask the user
+
+Skills that only record (`praxis-commit`, `praxis-deploy`) never ask: unresolved → skip the tracking update.
 
 ## Paths and conventions
 
 - Tracking dir: `{tracking_dir}` (from `praxis.json`)
 - Epic file: `{tracking_dir}/{folder}/{EPIC_KEY}-{slug}.md`
 - Ticket file: `{tracking_dir}/{folder}/{TICKET_KEY}-{slug}.md`
-- Active ticket: `{tracking_dir}/.current` (JSON: `epic`, `ticket`, `folder`)
+- Active ticket of the main checkout: `{tracking_dir}/.current` (JSON: `epic`, `ticket`, `folder`). Written only by `/praxis-start` and `/praxis-bug` on a classic branch; a worktree never writes it.
 - Lessons: `{tracking_dir}/lessons.md`
 
 ## Standalone tickets (epic = null)
 
-When `.current` has `"epic": null` (created via `/praxis-bug`):
+When the ticket has no epic (`"epic": null` in `.current`, folder holding a single ticket file — created via `/praxis-bug`):
 - **No epic file** — skip all epic file operations
 - Folder: `{TICKET_KEY}-{slug}/`
 - Single ticket file in the folder
@@ -93,15 +99,17 @@ Scope to what the change touches; never run the whole repo when an affected-only
 
 ## Starting a ticket — git baseline
 
-**Before creating any worktree or branch** (`/praxis-start`, `/praxis-bug`), always rebase the starting point on an up-to-date `main`. Never branch off whatever happens to be checked out.
+**Before creating any worktree or branch** (`/praxis-start`, `/praxis-bug`), always start from an up-to-date `main`. Never branch off whatever happens to be checked out.
+
+**Classic branch** (main checkout):
 
 1. `git status --porcelain` → if the working tree is dirty, **stop and ask** the user (commit / stash / abandon). Never discard changes.
 2. `git checkout main`
 3. `git pull origin main`
 
-Only then create the worktree or the branch.
+Only then create the branch.
 
-If the session is already inside a worktree (so `main` is checked out elsewhere), do at least `git fetch origin main` and branch from `origin/main`.
+**Worktree** (new, or the session is already inside one): never touch the main checkout — another session, or the dev server, runs on its branch. `git fetch origin main` and branch from `origin/main`.
 
 ## Session rename
 
@@ -118,10 +126,12 @@ Use the provider title. If it is unclear, too long, or misleading, propose a sho
 `EnterWorktree` is a **Claude Code built-in tool** (not a shell command). It creates an isolated git worktree and switches the session into it.
 
 Usage in skills:
-- `EnterWorktree` with `name` = ticket key in lowercase (e.g., `key-30636`)
-- If it fails (e.g., already in a worktree, or tool unavailable) → fall back to classic branch
+- Already in a worktree (e.g. a desktop session with the Worktree toggle) → stay in it, do not call `EnterWorktree`
+- Else `EnterWorktree` with `name` = ticket key in lowercase (e.g., `key-30636`)
+- Then give the worktree the ticket's branch, from `origin/main`: `git fetch origin main && git checkout -b {branch} origin/main`, with `{branch}` = `fix/{ticket-key-lowercase}-{slug}`. The generated branch (`cld/…`, `worktree-…`) carries no commit yet; if it has commits → ask before switching. The key in the branch is what resolves the ticket in this worktree.
+- If `EnterWorktree` fails → tell the user and ask before falling back to a classic branch: the fallback switches the main checkout's branch.
 
-To check if currently in a worktree: compare `git rev-parse --show-toplevel` against `git worktree list` entries.
+To check if currently in a worktree: `git rev-parse --absolute-git-dir` differs from `git rev-parse --path-format=absolute --git-common-dir`.
 
 ## Décisions section
 

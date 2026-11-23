@@ -1,6 +1,6 @@
 ---
 name: praxis-ship
-description: Use when the code of the active ticket is written (or a plan with remaining phases exists) and the user wants it taken to a pull request — "/praxis-ship", "on livre", "commit + PR", "fais la QA et ouvre la PR", or a goal of the form "implémente les phases, /praxis-review, QA, commit, PR". Requires praxis tracking (.current). Do NOT use for the initial plan (/praxis-spec), for triage (/praxis-triage) or for a bug fix without tracking (/praxis-fix).
+description: Use when the code of the active ticket is written (or a plan with remaining phases exists) and the user wants it taken to a pull request — "/praxis-ship", "on livre", "commit + PR", "fais la QA et ouvre la PR", or a goal of the form "implémente les phases, /praxis-review, QA, commit, PR". Requires praxis tracking (a ticket resolved from the branch or .current). Do NOT use for the initial plan (/praxis-spec), for triage (/praxis-triage) or for a bug fix without tracking (/praxis-fix).
 argument-hint: "[TICKET_KEY] [plan=<path>] [skip=implement,review,qa] [target=<qa target>] [pr=draft|ready]"
 ---
 

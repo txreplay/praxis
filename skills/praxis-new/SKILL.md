@@ -54,16 +54,10 @@ Use [templates.md](../references/templates.md). Map provider status → Praxis s
 - Comments format: `**author (date)** : content`
 - Missing links: `—`
 
-### 6. Initialize `.current`
+### 6. No `.current`
 
-```json
-{
-  "epic": "{EPIC_KEY}",
-  "ticket": "{first active ticket, else first todo ticket}",
-  "folder": "{folder name}"
-}
-```
+Leave `.current` alone: it names the ticket of the main checkout, which may be in progress. `/praxis-start` sets it.
 
 ### 7. Summary
 
-Display: folder created, file count, active ticket. Suggest `/praxis-start {TICKET_KEY}`.
+Display: folder created, file count, suggested ticket (first active, else first todo). Suggest `/praxis-start {TICKET_KEY}`.

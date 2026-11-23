@@ -136,7 +136,7 @@ EOF
 
 ### 6. Praxis tracking sync (when the project uses praxis)
 
-If `praxis.json` exists at the project root and `{tracking_dir}/.current` names a ticket, update the ticket file right after the commit — no provider call, local files only:
+If `praxis.json` exists (in a worktree: the main checkout's, per praxis `common.md`) and a ticket resolves per praxis `common.md › Active ticket resolution` (never ask: unresolved → skip), update the ticket file right after the commit — no provider call, local files only:
 
 - **Infos › Branche**: `git branch --show-current` if the field is `—`
 - **Avancement**: append `- {YYYY-MM-DD} : commit {short sha} — {commit subject}`

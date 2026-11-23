@@ -1,15 +1,18 @@
 #!/bin/bash
-# PreToolUse on Bash — refuse un `git commit` ou `git push` si la branche
-# écrite ne porte pas le ticket praxis actif ({tracking_dir}/.current du
-# checkout principal, tracking_dir lu dans praxis.json).
+# PreToolUse on Bash — refuse un `git commit` ou `git push` écrit depuis le
+# checkout principal si la branche ne porte pas son ticket praxis
+# ({tracking_dir}/.current, tracking_dir lu dans praxis.json).
 #
 # Motif : un commit parti sur la branche d'un autre ticket, restée active à
 # l'insu de tout le monde. Le commit n'annonce sa branche qu'après l'avoir écrite ;
 # ce garde-fou rend l'écart visible AVANT l'écriture.
 #
+# `.current` est le ticket du checkout principal seulement. Un worktree porte un
+# seul ticket, résolu par sa branche : il n'est pas contrôlé ici.
+#
 # Silencieux (exit 0) dès qu'il ne peut pas se prononcer : pas de jq, pas une
-# écriture git, hors dépôt git, pas de suivi praxis, HEAD détachée, ou une
-# commande qui change elle-même de branche avant d'écrire.
+# écriture git, hors dépôt git, depuis un worktree, pas de suivi praxis, HEAD
+# détachée, ou une commande qui change elle-même de branche avant d'écrire.
 set -uo pipefail
 command -v jq &>/dev/null || exit 0
 
@@ -46,6 +49,8 @@ git -C "$DIR" rev-parse --git-dir &>/dev/null || exit 0
 # .current et praxis.json vivent dans le checkout principal (ignorés par git,
 # donc absents des worktrees).
 COMMON=$(git -C "$DIR" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
+GIT_DIR=$(git -C "$DIR" rev-parse --absolute-git-dir 2>/dev/null) || exit 0
+[ "$GIT_DIR" = "$COMMON" ] || exit 0
 ROOT=$(dirname "$COMMON")
 CFG="$ROOT/praxis.json"
 TRACKING_DIR=".claude/generated/praxis"
@@ -101,7 +106,7 @@ EPIC=$(jq -r '.epic // empty' "$CURRENT_FILE" 2>/dev/null)
 cat >&2 <<EOF
 BLOCKED: mauvaise branche pour ce « git $ACTION ».
   branche écrite : $BRANCH
-  ticket praxis actif : $TICKET${EPIC:+ (parent : $EPIC)}
+  ticket du checkout principal : $TICKET${EPIC:+ (parent : $EPIC)}
 Vérifie avec « git -C $DIR branch --show-current ». Puis, au choix :
   - bascule sur la branche du ticket (ou du parent, pour une PR de lot) ;
   - ou, si la branche est volontaire, mets .current à jour

@@ -56,7 +56,7 @@ For each validated ticket, use provider's **Create a ticket** command. Set paren
 
 ### 6. Initialize local tracking
 
-Same as `/praxis-new` steps 4-7: create folder, epic file, ticket files, `.current`.
+Same as `/praxis-new` steps 4-7: create folder, epic file, ticket files — `.current` untouched.
 
 ### 7. Summary
 

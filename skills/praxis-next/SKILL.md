@@ -1,6 +1,6 @@
 ---
 name: praxis-next
-description: Analyze current state and suggest the next action. Use when the user invokes "/praxis-next" or seems unsure what to do next. Reads .current, ticket progression, git state, and recommends the next step.
+description: Analyze current state and suggest the next action. Use when the user invokes "/praxis-next" or seems unsure what to do next. Reads the active ticket (branch or .current), ticket progression, git state, and recommends the next step.
 ---
 
 # /praxis-next
@@ -20,7 +20,7 @@ Per [common.md — Loading the provider](../references/common.md#loading-the-pro
 ### 1. Gather state
 
 Collect (fail silently on each):
-- **Praxis**: `.current` exists? Ticket file? Progression? `lessons.md` count?
+- **Praxis**: ticket resolved per [common.md — Active ticket resolution](../references/common.md#active-ticket-resolution) (without asking)? Ticket file? Progression? `lessons.md` count?
 - **Git**: branch, uncommitted changes, commits ahead of main, PR exists?
 - **Code**: TODOs/FIXMEs in recently modified files
 
@@ -31,8 +31,8 @@ First match wins:
 | Condition | Recommendation |
 |-----------|---------------|
 | No `praxis.json` | "Copier le template: `cp {praxis_dir}/praxis.example.json ./praxis.json`" |
-| No `.current` | "`/praxis-new <EPIC>` ou `/praxis-bug <TICKET>`" |
-| `.current` but ticket file missing | "`/praxis-sync`" |
+| No ticket resolved | "`/praxis-start <TICKET>`, `/praxis-new <EPIC>` ou `/praxis-bug <TICKET>`" |
+| Ticket resolved but ticket file missing | "`/praxis-sync`" |
 | Ticket status `done`/`review` | Find next ticket → `/praxis-start {NEXT}` or "Tous terminés" |
 | Ticket status `blocked` | "Ticket bloqué. Résoudre le blocage ou `/praxis-start {AUTRE}` pour un autre ticket" |
 | Uncommitted changes | "`/commit`" |

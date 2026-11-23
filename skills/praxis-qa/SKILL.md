@@ -23,7 +23,7 @@ Walk the running app through the ticket's acceptance criteria and the design, in
 
 ## 0. Scope
 
-- Ticket: argument → `{tracking_dir}/.current` → branch name. Read the ticket file: AC, Décisions, design links, flag. No tracking → ask for the AC list first.
+- Ticket: per common.md — Active ticket resolution. Read the ticket file: AC, Décisions, design links, flag. No tracking → ask for the AC list first.
 - Flags read by the diff must have a **known** state on the target (Décisions or the user). Unknown → ask now.
 
 ## 1. Preflight

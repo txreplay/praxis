@@ -42,9 +42,9 @@ List all folders in `{tracking_dir}/`. For each folder:
   KEY-38603 — CVthèque filtres     ✅ Terminé [6/6]
 ```
 
-Mark the active ticket (from `.current`) with `← actif`.
+Mark the main checkout's ticket (from `.current`) with `← actif`, and each ticket whose key is in the branch of a worktree (`git worktree list --porcelain`, case-insensitive) with `← worktree {folder name}`.
 
 ### 3. Offer actions
 
-- "Changer de ticket actif ? `/praxis-start {KEY}`"
+- "Démarrer un autre ticket ? `/praxis-start {KEY}`"
 - "Archiver un epic terminé ? (supprimer le dossier manuellement)"

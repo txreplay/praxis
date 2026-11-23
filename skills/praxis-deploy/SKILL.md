@@ -66,7 +66,7 @@ Ask « Je push {branch} ? ». Then `git -C "$WT" push origin HEAD:{branch}`. Rej
 
 ### 5. Tracking & report
 
-Praxis (`.current`): Avancement `- {date} : poussé sur {branch} ({merge sha}) — déploiement {run url} {verdict}`.
+Praxis (ticket of the source branch, per common.md — Active ticket resolution; unresolved → skip): Avancement `- {date} : poussé sur {branch} ({merge sha}) — déploiement {run url} {verdict}`.
 
 ```markdown
 ## {branch} — {source}

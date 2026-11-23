@@ -30,7 +30,9 @@ Look for `{TICKET_KEY}-*.md` in `{tracking_dir}/`. If found → suggest `/praxis
 
 Fetch ticket via provider. Slugify summary per [common.md — Slugification](../references/common.md#slugification). Create folder `{tracking_dir}/{TICKET_KEY}-{slug}/` and one ticket file using [templates.md](../references/templates.md). **No epic file.**
 
-### 3. Initialize .current
+### 3. `.current` (classic branch only)
+
+Written at step 4.6 when the user picks a classic branch; a worktree never writes it:
 
 ```json
 { "epic": null, "ticket": "{TICKET_KEY}", "folder": "{TICKET_KEY}-{slug}" }
@@ -39,11 +41,11 @@ Fetch ticket via provider. Slugify summary per [common.md — Slugification](../
 ### 4. Transition and git setup
 
 1. If status is `todo` → ask to transition to `active`
-2. Reset to an up-to-date `main` first, per [common.md — Starting a ticket: git baseline](../references/common.md#starting-a-ticket--git-baseline). Dirty working tree → stop and ask.
-3. Ask: worktree or classic branch
-4. Worktree: `EnterWorktree` with ticket key lowercase (fallback to branch on failure)
+2. Already in a worktree → worktree, no question. Else ask: worktree or classic branch
+3. Start from an up-to-date `main` per [common.md — Starting a ticket: git baseline](../references/common.md#starting-a-ticket--git-baseline) — the worktree variant never touches the main checkout. Dirty working tree → stop and ask.
+4. Worktree: per [common.md — Git worktree management](../references/common.md#git-worktree-management) — stay or `EnterWorktree` with ticket key lowercase, then branch `fix/{ticket-key}-{slug}` from origin/main. On failure → ask before a classic branch
 5. Branch: suggest `fix/{ticket-key}-{slug}`, fetch + checkout from origin/main
-6. Update `Branche` field in ticket Infos
+6. Update `Branche` field in ticket Infos; classic branch → write `.current` (step 3)
 7. Propose the session rename per [common.md — Session rename](../references/common.md#session-rename) — display only, never execute
 
 ### 5. Triage
