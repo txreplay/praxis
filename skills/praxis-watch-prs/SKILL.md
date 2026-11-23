@@ -114,6 +114,8 @@ Build the whole line in a variable and print it once: two writes interleave unde
 
 ### 1.3 Re-review triggers
 
+**An entry with `labelFlow: true` re-reviews on c) only.** On such an entry, a) and b) never queue a round: a new head updates `sha`, an author signal is read, and each gets one report line (`en correction, label pas encore remis`). Putting the label back is how the author says the round is ready. A stable head or a « corrigé » in a thread is not: observed, a round dispatched on a stable head was overtaken by the author's next push before the user could answer it. `force <pr>` overrides this. An entry without `labelFlow` keeps a), b) and c).
+
 **a) Debounce.** Re-review when head ≠ `reviewedSha` **and** head == `sha` recorded at the previous pass (the author stopped pushing). Head ≠ both → mid-push: update `sha`, log `en cours de push`, wait.
 
 **b) Author signal** (bypasses the debounce), dated after the last review:
