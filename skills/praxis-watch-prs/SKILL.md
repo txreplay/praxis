@@ -17,7 +17,7 @@ Load config per common.md, then `watch.prs` and the overlay's `## praxis-watch-p
 ## Non-negotiable rules
 
 - **NEVER post anything without explicit user confirmation** — not a review, not a GitHub comment, not an approval, not a chat message. `AskUserQuestion` every time, even when the review is empty.
-- **Two carve-outs, and only two: the 👀 reaction** of step 4, and the **chat status reactions** of 1.7 (only when `watch.prs.chat_reactions` is set). The 👀 carries no judgement — it says "someone picked this up". A chat status reaction only mirrors a review the user already confirmed on GitHub. Nothing else inherits these exceptions.
+- **Three carve-outs, and only three: the 👀 reaction** of step 4, the **chat status reactions** of 1.7 (only when `watch.prs.chat_reactions` is set), and the **review re-request** of 1.5b (only when `watch.prs.rerequest_on_label` is set). The 👀 carries no judgement — it says "someone picked this up". A chat status reaction only mirrors a review the user already confirmed on GitHub. A re-request only repeats, on the user's own PR, a request the user already made by putting the label back. Nothing else inherits these exceptions.
 - **NEVER post a message in the chat channel**, and never propose it. Apart from the status reactions of 1.7, the channel is read-only here.
 - **Launching a review needs no approval** when the PR is in scope — except stacked PRs (step 3.4).
 - **READ-ONLY on the user's checkout.** No file modified, no branch checked out, no fix applied. `gh pr diff` to read the diff.
@@ -181,6 +181,38 @@ gh api "repos/{repo}/issues/$N/comments?per_page=100" \
 Also read the request's chat thread as in 1.3b (`lastThreadTs`): a question asked there, by anyone but the user, is an incoming event like a GitHub comment.
 
 Exclude `$ME` and bots on every axis. Anything found → the `PushNotification` of step 5 (« #N : review de @x (CHANGES_REQUESTED, 3 commentaires) ») and a report entry sized to the event: who, event, count, substance of the blocking points. `lastSeenTs` advances **only after** reporting. Do not offer to answer, fix or push — this is a notification channel.
+
+#### 1.5b Re-request reviews when the user puts the label back
+
+Only when `watch.prs.ready_label` **and** `watch.prs.rerequest_on_label` are set. Putting the label back on their own PR is how the user says "ready for another look"; this step clicks GitHub's « Re-request review » for them, so the earlier reviewers get the notification without the user doing it by hand. No confirmation — the user asked for it by putting the label back.
+
+For each `OPEN` entry, cutoff `T` = `lastRerequestAt`, else `addedAt`:
+
+```bash
+gh api --paginate "repos/{repo}/issues/$N/timeline?per_page=100" \
+  | jq -s --arg l "{ready_label}" --arg t "$T" --arg me "$ME" \
+      'add | [.[] | select((.event=="labeled" or .event=="unlabeled") and .label.name==$l and .created_at > $t)] | last | select(.event=="labeled" and .actor.login==$me) | .created_at'
+```
+
+Nothing printed → no new labelling by the user, skip. A date printed → the reviewers to re-request are the humans, other than `$ME`, who reviewed the PR and whose latest decisive review is not an approval — they left only comments, or requested changes (a later `CHANGES_REQUESTED` or `DISMISSED` cancels an earlier approval). A reviewer whose approval stands is never re-requested, whatever head it was given on. Minus those already pending:
+
+```bash
+gh api "repos/{repo}/pulls/$N/reviews?per_page=100" \
+  | jq -r --arg me "$ME" \
+      '[.[] | select(.user.type != "Bot" and .user.login != $me and .state != "PENDING")] | group_by(.user.login)
+       | map(select(([.[] | select(.state=="APPROVED" or .state=="CHANGES_REQUESTED" or .state=="DISMISSED")] | last | .state) != "APPROVED"))
+       | .[][0].user.login'
+gh api "repos/{repo}/pulls/$N/requested_reviewers" --jq '[.users[].login]'
+```
+
+Re-request the remainder in one call:
+
+```bash
+gh api "repos/{repo}/pulls/$N/requested_reviewers" -X POST -f "reviewers[]=<login>" -f "reviewers[]=<login>" \
+  --jq '[.requested_reviewers[].login]'
+```
+
+Then set `lastRerequestAt` to the labelling date printed above — also when nobody was left to re-request, so the same labelling never fires twice. A failed call leaves `lastRerequestAt` unchanged: the next pass retries. One report line: « #N : label remis, review re-demandée à @a, @b » (or « personne à relancer »). No `PushNotification` — the user triggered it. Teams (`team_reviewers`) and anyone who never reviewed are out of scope: a first review request stays the user's call.
 
 ### 1.6 `mergeWatch` — the user's merged PRs, watched for a RED `main`
 
@@ -484,7 +516,7 @@ Per watch.md › Next pass, with `watch.prs.interval_sec`. Skipped under `chaine
   },
   "ignored": { "103": { "reason": "backend-only", "sha": "1122334", "slackUser": "john.roe" } },
   "myPRs": {
-    "104": { "title": "…", "ticket": "KEY-2", "slackTs": "…", "sha": null, "lastSeenTs": "2026-08-03T12:56:32Z", "addedAt": "…", "source": "slack" }
+    "104": { "title": "…", "ticket": "KEY-2", "slackTs": "…", "sha": null, "lastSeenTs": "2026-08-03T12:56:32Z", "addedAt": "…", "source": "slack", "lastRerequestAt": "2026-08-03T14:02:10Z" }
   },
   "mergeWatch": {
     "105": { "title": "…", "mergeCommit": "<full sha>", "mergedAt": "2026-08-03T15:10:55Z", "notified": [] }
@@ -493,7 +525,7 @@ Per watch.md › Next pass, with `watch.prs.interval_sec`. Skipped under `chaine
 }
 ```
 
-`state` ∈ `queued` · `reviewing` · `pending-approval` · `awaiting-fix` · `parked`. `agent` exists only while `reviewing`. `dispatchedAt` survives into `pending-approval` (staleness cutoff) and is dropped once posted. `reactionId` exists only when this skill created the reaction (`201`). `chatReactions` lists the emoji names already added on the request message (1.7) — reactions are never removed, so the list only grows. `reviewedAt` is when our last review was posted (1.3c cutoff). `labelFlow` is true once the PR was seen carrying `ready_label`. `lastThreadTs` is the newest reply read in the request's chat thread (1.3b, 1.5), on `watched` and `myPRs` entries alike. `parked` carries an optional `parkedReason` ∈ `draft` · `label-removed` · `stacked-base`. `scope` ∈ `all` · `contract` (a legacy `frontend` value means `contract`). `ignored.reason` ∈ `backend-only` · `enough-approvals` · `own-pr` · `closed` · `stacked-declined` · `user-request`. `source` ∈ `slack` · `manual`. `author` is the GitHub login, `slackUser` the chat handle — never substitute one for the other.
+`state` ∈ `queued` · `reviewing` · `pending-approval` · `awaiting-fix` · `parked`. `agent` exists only while `reviewing`. `dispatchedAt` survives into `pending-approval` (staleness cutoff) and is dropped once posted. `reactionId` exists only when this skill created the reaction (`201`). `chatReactions` lists the emoji names already added on the request message (1.7) — reactions are never removed, so the list only grows. `reviewedAt` is when our last review was posted (1.3c cutoff). `labelFlow` is true once the PR was seen carrying `ready_label`. `lastThreadTs` is the newest reply read in the request's chat thread (1.3b, 1.5), on `watched` and `myPRs` entries alike. `lastRerequestAt` is the date of the user's last labelling already handled by 1.5b. `parked` carries an optional `parkedReason` ∈ `draft` · `label-removed` · `stacked-base`. `scope` ∈ `all` · `contract` (a legacy `frontend` value means `contract`). `ignored.reason` ∈ `backend-only` · `enough-approvals` · `own-pr` · `closed` · `stacked-declined` · `user-request`. `source` ∈ `slack` · `manual`. `author` is the GitHub login, `slackUser` the chat handle — never substitute one for the other.
 
 `reviewedSha` is a cache: GitHub (`/pulls/<N>/reviews` filtered on `$ME`) is the source of truth.
 
