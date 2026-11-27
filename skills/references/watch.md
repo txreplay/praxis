@@ -56,7 +56,7 @@ Everything project-specific lives in the project's `praxis.json` (gitignored by 
 | `watch.prs.scope_contract_globs` | Changed files reviewed as a contract only (DTOs, generated types) | `[]` |
 | `watch.prs.budget` | Review subagents per pass | `5` |
 | `watch.prs.ready_label` | GitHub label the author puts on a PR ready for review, removes while fixing, puts back to ask for a re-review. Becomes a second request source and the strongest re-review signal — see `praxis-watch-prs` › 1.1, 1.3c, 2. Absent → label ignored | none |
-| `watch.prs.approvals_enough` | Number of human approvals (latest decisive review per reviewer) at which a PR needs no review from us, new or re-review — see `praxis-watch-prs` › 4. Absent → never skipped | none |
+| `watch.prs.approvals_enough` | Number of human approvals (latest decisive review per reviewer) at which a PR needs no review from us, new or re-review — see `praxis-watch-prs` › 4. Never applies to a PR whose last review by the user is a comment or a change request: that one keeps its re-reviews until the user approves. Absent → never skipped | none |
 | `watch.prs.rerequest_on_label` | When the user puts `ready_label` back on one of their own PRs, re-request on GitHub the review of everyone who reviewed it without a standing approval (comments only, or changes requested) — see `praxis-watch-prs` › 1.5b. Needs `ready_label`. Absent → never | `false` |
 | `watch.prs.chat_reactions` | Emoji names (`reviewing`, `commented`, `changes_requested`, `approved`) added on the review request to show where the review stands — see `praxis-watch-prs` › 1.7. Absent → no chat reaction at all | none |
 | `watch.tickets.jql` | Provider query for the user's assigned, not-done tickets | required |

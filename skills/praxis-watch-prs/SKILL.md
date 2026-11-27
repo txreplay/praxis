@@ -157,7 +157,7 @@ A triggered PR enters the queue as a **re-review** with its reason (`debounce` /
 | What the new commits address | What you do |
 |---|---|
 | A **Critical** or **Important** still open, from **any** reviewer | Full re-review. Queue it. |
-| Only nits, questions, formatting, coverage | **No agent.** Verify the fix yourself (one or two commands), propose a thread reply (needs the user's go-ahead), record the new `reviewedSha`. |
+| Only nits, questions, formatting, coverage | **No agent.** Verify the fix yourself (`compare/<reviewedSha>...<head>`, one or two commands). Every point of ours fixed or answered, and CI green → draft an `APPROVE` that lists what was checked and present it (step 5). Otherwise propose a thread reply. Both need the user's go-ahead; record the new `reviewedSha`. |
 | Nothing raised — a rebase on main, an unrelated file | Update `sha`, no queue, one line. |
 
 `force <pr>` overrides this.
@@ -353,6 +353,13 @@ gh api "repos/{repo}/pulls/<N>/reviews?per_page=100" \
 ```
 
 Count ≥ `approvals_enough` → the PR is cleared, another round adds nothing: no agent, no 👀. Move it to `ignored` (`enough-approvals`) with the head SHA, out of `watched`; report one line with the count. Re-checked like `backend-only` when its head moves — a push may dismiss stale approvals. `force <pr>` overrides it.
+
+**Except a PR we already reviewed without approving.** The gate only spares us a review we have not started. When `$ME`'s last review on the PR is `COMMENTED` or `CHANGES_REQUESTED`, the PR stays in `watched` whatever the count: we owe the author a closing verdict, and the request to look again (label put back, or the chat bot asking the user for a new round) is addressed to us. Size the round by 1.4 instead: our points all fixed or answered → propose `APPROVE`; one still open → `COMMENT` on it. Other reviewers' new remarks stay theirs. Observed: a PR we had commented on with three Nits was dropped as `enough-approvals` the moment a second reviewer approved, while the bot was asking the user for a re-review — the author never got our verdict.
+
+```bash
+gh api "repos/{repo}/pulls/<N>/reviews?per_page=100" \
+  | jq -r --arg me "$ME" '[.[] | select(.user.login==$me and .state!="PENDING")] | last | .state // "none"'
+```
 
 **Budget**: re-reviews first, then new PRs oldest first, `watch.prs.budget` max. Say how many are left. When several reviews come back at once, group the confirmations into one `AskUserQuestion`.
 
